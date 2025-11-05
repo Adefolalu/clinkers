@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="fc:miniapp"
+      content='{ 
+        "version": "next",
+        "imageUrl": "https://mwpt.vercel.app/splash.jpg",
+        "button": {
+          "title": "MUTATE MY WARPLET",
+          "action": {
+            "type": "launch_miniapp",
+            "url": "https://mwpt.vercel.app/",
+            "name": "Mutant Warplets",
+            "splashImageUrl": "https://mwpt.vercel.app/splash.jpg",
+            "splashBackgroundColor": "#1f2937"
+          }
+        }
+      }'
+    />
+
+    <title>Mutant Warplets</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

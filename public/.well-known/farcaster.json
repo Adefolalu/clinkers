@@ -1,0 +1,18 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjIzOTM5NiwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDRENEU1MjIzODRkNkYxMDkwYkZENEM0NTI3YTdkNTJERmQyMGJDYTMifQ",
+    "payload": "eyJkb21haW4iOiJtd3B0LnZlcmNlbC5hcHAifQ",
+    "signature": "FgRp5mTPPJM8kT93f711HdK5GpPdDKSmwrtcP3Ql4bcYNJC6JlQNZRnj2aAMx9/2jmPdimgimgq5OsntuEmU+Bw="
+  },
+  "frame": {
+    "version": "1",
+    "name": "Mutant Warplets",
+    "iconUrl": "https://mwpt.vercel.app/logo.jpg",
+    "homeUrl": "https://mwpt.vercel.app",
+    "imageUrl": "https://mwpt.vercel.app/splash.jpg",
+    "buttonTitle": "Mutate your Warplet",
+    "splashImageUrl": "https://mwpt.vercel.app/splash.jpg",
+    "splashBackgroundColor": "#2596be",
+    "webhookUrl": "https://mwpt.vercel.app/api/webhook"
+  }
+}
