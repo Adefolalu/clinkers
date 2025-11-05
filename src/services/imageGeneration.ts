@@ -2,8 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 
 export interface ImageGenerationOptions {
   prompt: string;
-  imageUrl?: string;
-  strength?: number; // 0-1, how much to transform (0.3 = subtle, 0.8 = heavy)
+  personalityTraits?: string[];
   negativePrompt?: string;
   customPrompt?: string; // Optional full custom prompt override
 }
@@ -28,17 +27,17 @@ export class ImageGenerationService {
   }
 
   /**
-   * Generate mutated image using Gemini's native image generation
+   * Generate personality-based Carplet image using Gemini's native image generation
    */
-  async generateMutatedImage(
+  async generateCarpletImage(
     options: ImageGenerationOptions
   ): Promise<ImageGenerationResult> {
-    const { imageUrl, customPrompt } = options;
+    const { customPrompt } = options;
 
     // If we have Gemini API, use it for native image generation
-    if (this.geminiAI && imageUrl) {
+    if (this.geminiAI) {
       try {
-        console.log("🎨 Generating mutated image with ...");
+        console.log("🎨 Generating Carplet image...");
 
         const config = {
           responseModalities: ["IMAGE", "TEXT"],
@@ -46,44 +45,38 @@ export class ImageGenerationService {
 
         const model = "gemini-2.5-flash-image";
 
-        // First, fetch and convert the original image to base64
-        const imageResponse = await fetch(imageUrl);
-        const imageBlob = await imageResponse.blob();
-        const imageBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const base64 = (reader.result as string).split(",")[1];
-            resolve(base64);
-          };
-          reader.readAsDataURL(imageBlob);
-        });
-
-        const mimeType = imageBlob.type || "image/jpeg";
-
-        // Use custom prompt if provided, otherwise use default
+        // Use custom prompt if provided, otherwise use default personality-based prompt
         const promptText =
           customPrompt ||
-          `Transform this character into a HEAVILY MUTATED CYBERPUNK creature version #{n}.
-Keep the base form and recognizable traits of the original character, but make each mutation DISTINCT and UNIQUE:
-- Add varied cybernetic implants, biomechanical limbs, glowing neon patterns, and energy effects.
-- Each version should have a different color scheme, tech style, and mutation intensity.
-- Incorporate unique futuristic enhancements such as plasma conduits, holographic armor, or neural cables.
-- Make the overall design aggressive, high-tech, and alive with cyberpunk energy.
-- Invert the background color or add a slime/fog effect to the background to create a more dramatic atmosphere.
-- Keep the background composition similar but with these atmospheric modifications.
-Style: highly detailed digital illustration, cinematic cyberpunk lighting, 8K resolution, sharp contrast, vivid colors.
-`;
+          `Create a unique digital avatar character representing a Farcaster user. This should be a personalized NFT called a "Carplet":
+
+Character Design:
+- Anime/cartoon style digital avatar
+- Unique and memorable personality-driven design
+- Vibrant, eye-catching colors
+- Clean, modern illustration style
+- Should feel like a digital identity representation
+
+Background:
+- Simple but elegant background
+- Subtle patterns or gradients
+- Colors that complement the character
+- Not too busy to distract from the main subject
+
+Style Requirements:
+- High quality digital illustration
+- Professional character design
+- Suitable for NFT profile picture use
+- 1:1 aspect ratio composition
+- Sharp, clean lines and detailed shading
+- Suitable for social media profile use
+
+The character should feel unique, personal, and represent someone's digital identity in the Farcaster ecosystem.`;
 
         const contents = [
           {
             role: "user",
             parts: [
-              {
-                inlineData: {
-                  mimeType: mimeType,
-                  data: imageBase64,
-                },
-              },
               {
                 text: promptText,
               },
@@ -108,7 +101,7 @@ Style: highly detailed digital illustration, cinematic cyberpunk lighting, 8K re
             // Convert base64 to data URL
             const dataUrl = `data:${inlineData.mimeType};base64,${inlineData.data}`;
 
-            console.log("✅ Gemini image generation successful!");
+            console.log("✅ Carplet generation successful!");
             return {
               imageUrl: dataUrl,
               service: "gemini",
@@ -122,12 +115,12 @@ Style: highly detailed digital illustration, cinematic cyberpunk lighting, 8K re
 
         throw new Error("No image data in Gemini response");
       } catch (error) {
-        console.error("❌ Gemini image generation failed:", error);
+        console.error("❌ Carplet generation failed:", error);
         throw error;
       }
     }
 
-    throw new Error("Gemini API not available or no image URL provided");
+    throw new Error("Gemini API not available");
   }
 
   /**

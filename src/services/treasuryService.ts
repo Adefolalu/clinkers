@@ -1,4 +1,4 @@
-import { base } from "wagmi/chains";
+import { celo } from "wagmi/chains";
 import {
   getBalance,
   getChainId,
@@ -8,23 +8,23 @@ import {
   writeContract,
 } from "wagmi/actions";
 import { config } from "../wagmi";
-import { mutantWarplet } from "../constants/Abi";
+import { carplets } from "../constants/Abi";
 import { formatEther } from "viem";
 
-async function ensureBase(): Promise<void> {
+async function ensureCelo(): Promise<void> {
   const current = getChainId(config);
-  if (current !== base.id) {
-    await switchChain(config, { chainId: base.id });
+  if (current !== celo.id) {
+    await switchChain(config, { chainId: celo.id });
   }
 }
 
 export async function getContractOwner(): Promise<`0x${string}`> {
   const owner = (await readContract(config, {
-    address: mutantWarplet.address as `0x${string}`,
-    abi: mutantWarplet.abi as any,
+    address: carplets.address as `0x${string}`,
+    abi: carplets.abi as any,
     functionName: "owner",
     args: [],
-    chainId: base.id,
+    chainId: celo.id,
   })) as `0x${string}`;
   return owner;
 }
@@ -34,21 +34,21 @@ export async function getContractBalance(): Promise<{
   eth: string;
 }> {
   const balance = await getBalance(config, {
-    address: mutantWarplet.address as `0x${string}`,
-    chainId: base.id,
+    address: carplets.address as `0x${string}`,
+    chainId: celo.id,
   });
   // getBalance returns { value, decimals, formatted, symbol }, but we also return raw wei
   return { wei: balance.value, eth: formatEther(balance.value) };
 }
 
 export async function withdrawTreasury(): Promise<`0x${string}`> {
-  await ensureBase();
+  await ensureCelo();
   const hash = await writeContract(config, {
-    address: mutantWarplet.address as `0x${string}`,
-    abi: mutantWarplet.abi as any,
+    address: carplets.address as `0x${string}`,
+    abi: carplets.abi as any,
     functionName: "withdraw",
     args: [],
-    chainId: base.id,
+    chainId: celo.id,
   });
   await waitForTransactionReceipt(config, { hash });
   return hash;

@@ -1,6 +1,6 @@
 import { farcasterFrame } from "@farcaster/frame-wagmi-connector";
 import { http, createConfig } from "wagmi";
-import { base } from "wagmi/chains";
+import { celo } from "wagmi/chains";
 import { injected, walletConnect, coinbaseWallet } from "@wagmi/connectors";
 import { createAppKit } from "@reown/appkit/react";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
@@ -12,18 +12,18 @@ const projectId =
 
 // Set up the Wagmi adapter
 const wagmiAdapter = new WagmiAdapter({
-  networks: [base],
+  networks: [celo],
   projectId,
 });
 
 // Create AppKit instance
 export const appKit = createAppKit({
   adapters: [wagmiAdapter],
-  networks: [base],
+  networks: [celo],
   projectId,
   metadata: {
-    name: "Mutant Warplets",
-    description: "Mutate your Warplet into cyberpunk creatures",
+    name: "Carplets",
+    description: "Generate your personalized Farcaster NFT on Celo",
     url: typeof window !== "undefined" ? window.location.origin : "",
     icons: [],
   },
@@ -36,15 +36,15 @@ export const appKit = createAppKit({
 });
 
 export const config = createConfig({
-  chains: [base],
+  chains: [celo],
   connectors: [
     injected(), // MetaMask, Rainbow, Coinbase Wallet browser extensions
     farcasterFrame(), // Farcaster Frame connector
     walletConnect({ projectId }), // WalletConnect
-    coinbaseWallet({ appName: "Mutant Warplets" }), // Coinbase Wallet
+    coinbaseWallet({ appName: "Carplets" }), // Coinbase Wallet
   ],
   transports: {
-    [base.id]: http(),
+    [celo.id]: http(),
   },
 });
 

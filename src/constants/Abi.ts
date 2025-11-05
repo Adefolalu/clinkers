@@ -1,7 +1,7 @@
-export const mutantWarpletContractAddress =
-  "0x95f020ED303dF076a33a8bF92f045270660f3F63";
+export const carpletsContractAddress =
+  "0xe55E9926B28a3FE5A79a5c020d53dA59d85ed170"; // To be deployed on Celo
 
-export const mutantWarpletsAbi = [
+export const carpletsAbi = [
   {
     inputs: [
       {
@@ -136,19 +136,36 @@ export const mutantWarpletsAbi = [
   },
   {
     inputs: [],
+    name: "FidAlreadyMinted",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "freezeMetadata",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
     name: "IncorrectFee",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "InvalidFid",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "MaxSupplyExceeded",
     type: "error",
   },
   {
     inputs: [
       {
-        internalType: "address",
-        name: "originContract",
-        type: "address",
-      },
-      {
         internalType: "uint256",
-        name: "originTokenId",
+        name: "fid",
         type: "uint256",
       },
       {
@@ -158,13 +175,7 @@ export const mutantWarpletsAbi = [
       },
     ],
     name: "mint",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "tokenId",
-        type: "uint256",
-      },
-    ],
+    outputs: [],
     stateMutability: "payable",
     type: "function",
   },
@@ -268,6 +279,31 @@ export const mutantWarpletsAbi = [
     anonymous: false,
     inputs: [
       {
+        indexed: true,
+        internalType: "uint256",
+        name: "fid",
+        type: "uint256",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "minter",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "string",
+        name: "metadataURI",
+        type: "string",
+      },
+    ],
+    name: "CarpletMinted",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
         indexed: false,
         internalType: "uint256",
         name: "_tokenId",
@@ -281,31 +317,13 @@ export const mutantWarpletsAbi = [
     anonymous: false,
     inputs: [
       {
-        indexed: true,
-        internalType: "uint256",
-        name: "tokenId",
-        type: "uint256",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "originContract",
-        type: "address",
-      },
-      {
-        indexed: true,
-        internalType: "uint256",
-        name: "originTokenId",
-        type: "uint256",
-      },
-      {
         indexed: false,
-        internalType: "address",
-        name: "minter",
-        type: "address",
+        internalType: "uint256",
+        name: "newFee",
+        type: "uint256",
       },
     ],
-    name: "Mutated",
+    name: "MintFeeUpdated",
     type: "event",
   },
   {
@@ -411,7 +429,7 @@ export const mutantWarpletsAbi = [
         type: "uint256",
       },
     ],
-    name: "setMutationFee",
+    name: "setMintFee",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -507,6 +525,44 @@ export const mutantWarpletsAbi = [
     inputs: [
       {
         internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    name: "fidMinted",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    name: "fidToMinter",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
         name: "tokenId",
         type: "uint256",
       },
@@ -547,8 +603,53 @@ export const mutantWarpletsAbi = [
     type: "function",
   },
   {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "fid",
+        type: "uint256",
+      },
+    ],
+    name: "isFidMinted",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [],
-    name: "mutationFee",
+    name: "MAX_SUPPLY",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "metadataFrozen",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "mintFee",
     outputs: [
       {
         internalType: "uint256",
@@ -567,30 +668,6 @@ export const mutantWarpletsAbi = [
         internalType: "string",
         name: "",
         type: "string",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    name: "originOf",
-    outputs: [
-      {
-        internalType: "address",
-        name: "originContract",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "originTokenId",
-        type: "uint256",
       },
     ],
     stateMutability: "view",
@@ -679,9 +756,22 @@ export const mutantWarpletsAbi = [
     stateMutability: "view",
     type: "function",
   },
+  {
+    inputs: [],
+    name: "totalSupply",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
 ];
 
-export const mutantWarplet = {
-  address: mutantWarpletContractAddress,
-  abi: mutantWarpletsAbi,
+export const carplets = {
+  address: carpletsContractAddress,
+  abi: carpletsAbi,
 };

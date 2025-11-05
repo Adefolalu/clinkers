@@ -73,7 +73,7 @@ export default function AdminPanel() {
               ⚡
             </span>
             <h2 className="text-sm font-bold text-yellow-300 tracking-wide">
-              Admin Treasury
+              Carplets Treasury
             </h2>
           </div>
           {ownerAddress && (
@@ -101,7 +101,7 @@ export default function AdminPanel() {
               {loading ? (
                 <span className="animate-pulse">…</span>
               ) : (
-                `${Number(balanceEth).toFixed(4)} ETH`
+                `${Number(balanceEth).toFixed(4)} CELO`
               )}
             </div>
           </div>

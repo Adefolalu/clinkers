@@ -1,4 +1,4 @@
-import { base } from "wagmi/chains";
+import { celo } from "wagmi/chains";
 import { parseEther } from "viem";
 import {
   getChainId,
@@ -7,71 +7,64 @@ import {
   waitForTransactionReceipt,
 } from "wagmi/actions";
 import { config } from "../wagmi";
-import { mutantWarplet } from "../constants/Abi";
+import { carplets } from "../constants/Abi";
 import { decodeEventLog } from "viem";
 
 export interface MintArgs {
-  originContract: `0x${string}`;
-  originTokenId: bigint | number | string;
+  fid: bigint | number | string;
   metadataURI: string; // ipfs://...
-  feeEth?: string; // default 0.00037
+  feeEth?: string; // default free (0)
 }
 
 export interface MintResult {
   hash: `0x${string}`;
-  tokenId?: bigint;
+  fid: bigint;
 }
 
-async function ensureBase(): Promise<void> {
+async function ensureCelo(): Promise<void> {
   const current = getChainId(config);
-  if (current !== base.id) {
-    await switchChain(config, { chainId: base.id });
+  if (current !== celo.id) {
+    await switchChain(config, { chainId: celo.id });
   }
 }
 
-export async function mintMutant(args: MintArgs): Promise<MintResult> {
-  await ensureBase();
+export async function mintCarplet(args: MintArgs): Promise<MintResult> {
+  await ensureCelo();
 
-  const value = parseEther(args.feeEth ?? "0.00037");
-  const originId =
-    typeof args.originTokenId === "bigint"
-      ? args.originTokenId
-      : BigInt(args.originTokenId);
+  const value = parseEther(args.feeEth ?? "0");
+  const fid = typeof args.fid === "bigint" ? args.fid : BigInt(args.fid);
 
   const hash = await writeContract(config, {
-    address: mutantWarplet.address as `0x${string}`,
-    abi: mutantWarplet.abi as any,
+    address: carplets.address as `0x${string}`,
+    abi: carplets.abi as any,
     functionName: "mint",
-    args: [args.originContract, originId, args.metadataURI],
+    args: [fid, args.metadataURI],
     value,
-    chainId: base.id,
+    chainId: celo.id,
   });
 
   const receipt = await waitForTransactionReceipt(config, { hash });
 
-  // Try to parse Mutated event to get tokenId
-  let tokenId: bigint | undefined = undefined;
+  // Try to parse CarpletMinted event
   for (const log of receipt.logs) {
     try {
       const decoded = decodeEventLog({
-        abi: mutantWarplet.abi as any,
+        abi: carplets.abi as any,
         data: log.data,
         topics: log.topics,
       }) as any;
-      if (decoded?.eventName === "Mutated") {
+      if (decoded?.eventName === "CarpletMinted") {
         const args = decoded.args as {
-          tokenId: bigint;
-          originContract: `0x${string}`;
-          originTokenId: bigint;
+          fid: bigint;
           minter: `0x${string}`;
+          metadataURI: string;
         };
-        tokenId = args.tokenId;
-        break;
+        return { hash, fid: args.fid };
       }
     } catch {
       // not our event
     }
   }
 
-  return { hash, tokenId };
+  return { hash, fid };
 }

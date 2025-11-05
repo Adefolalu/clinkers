@@ -1,3 +1,18 @@
+# 🎨 Carplets - Personalized Farcaster NFTs
+
+Generate your unique personality-based NFT on Celo blockchain! Each Carplet is created from your Farcaster profile data using AI.
+
+## ✨ Features
+
+- **One Per FID**: Each Farcaster ID can mint exactly one Carplet
+- **Token ID = FID**: Your NFT token ID matches your Farcaster ID
+- **AI-Generated**: Personalized images based on your Farcaster personality
+- **Celo Blockchain**: Built on the eco-friendly Celo network
+- **Max Supply**: 10,000 unique Carplets
+- **Farcaster Integration**: Built as a Farcaster Mini App
+
+## 🚀 Tech Stack
+
 This is a [Vite](https://vitejs.dev) project bootstrapped with [`@farcaster/create-mini-app`](https://github.com/farcasterxyz/frames/tree/main/packages/create-mini-app).
 
 ## `farcaster.json`
