@@ -162,10 +162,12 @@ function deriveCarpletDesignSpec(
     clamp(lightness + 5, 30, 85)
   );
 
-  // Background color should be plain and contrasting
-  const bgHue = (baseHue + 180) % 360; // complement for separation
-  const bgSat = clamp(8 + (seed % 8), 8, 16); // low saturation
-  const bgLight = 88 + (seed % 6); // 88-94 very light solid
+  // Background color: plain, HIGHLY visible (not white). Use a complementary/triadic hue
+  // with medium saturation and mid-high lightness for clean contrast.
+  const hueOffset = 180 + ((seed >> 7) % 60) - 30; // 150..210 range around complement
+  const bgHue = (baseHue + hueOffset + 360) % 360;
+  const bgSat = clamp(30 + (seed % 25), 30, 55); // 30–55 medium saturation
+  const bgLight = clamp(60 + ((seed >> 4) % 20), 60, 78); // 60–78 mid/high lightness (clearly not white)
   const backgroundHex = hslToHex(bgHue, bgSat, bgLight);
 
   // Silhouette based on traits

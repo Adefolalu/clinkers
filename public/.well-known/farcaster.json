@@ -1,18 +1,27 @@
 {
+  "frame": {
+    "name": "The-Carplet",
+    "version": "1",
+    "iconUrl": "https://the-carplet.vercel.app/icon.png",
+    "homeUrl": "https://the-carplet.vercel.app",
+    "imageUrl": "https://the-carplet.vercel.app/splash.png",
+    "buttonTitle": "Mint your Carplet",
+    "splashImageUrl": "https://the-carplet.vercel.app/splash.png",
+    "splashBackgroundColor": "#FCFF52 ",
+    "webhookUrl": "https://api.neynar.com/f/app/dd72c8df-f5b5-40d7-8bcd-0986f9b239b9/event",
+    "subtitle": "The carplet",
+    "description": "Carplet on celo",
+    "primaryCategory": "social",
+    "screenshotUrls": ["https://the-carplet.vercel.app/splash.png"],
+    "heroImageUrl": "https://the-carplet.vercel.app/splash.png",
+    "tags": ["warplet", "nft", "mutant", "arblet", "celo"],
+    "tagline": "Mint your Carplet",
+    "ogTitle": "Carplet",
+    "ogDescription": "Mint your Carplet"
+  }{
   "accountAssociation": {
     "header": "eyJmaWQiOjIzOTM5NiwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDRENEU1MjIzODRkNkYxMDkwYkZENEM0NTI3YTdkNTJERmQyMGJDYTMifQ",
-    "payload": "eyJkb21haW4iOiJtd3B0LnZlcmNlbC5hcHAifQ",
-    "signature": "FgRp5mTPPJM8kT93f711HdK5GpPdDKSmwrtcP3Ql4bcYNJC6JlQNZRnj2aAMx9/2jmPdimgimgq5OsntuEmU+Bw="
+    "payload": "eyJkb21haW4iOiJ0aGUtY2FycGxldC52ZXJjZWwuYXBwIn0",
+    "signature": "pAMBqHC3WAeL0YJuJ0tWaC8SgXQXeOTup0UXzm7El/NLam80abpK3wIx7U9zto4TDXScvKlwQZsf/N88AzRC2Bs="
   },
-  "frame": {
-    "version": "1",
-    "name": "Mutant Warplets",
-    "iconUrl": "https://mwpt.vercel.app/logo.jpg",
-    "homeUrl": "https://mwpt.vercel.app",
-    "imageUrl": "https://mwpt.vercel.app/splash.jpg",
-    "buttonTitle": "Mutate your Warplet",
-    "splashImageUrl": "https://mwpt.vercel.app/splash.jpg",
-    "splashBackgroundColor": "#2596be",
-    "webhookUrl": "https://mwpt.vercel.app/api/webhook"
-  }
 }

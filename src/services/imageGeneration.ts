@@ -116,10 +116,11 @@ export class ImageGenerationService {
       { name: "Forest Dream", colors: ["#0B3D2E", "#35D07F", "#9EF01A"] },
     ];
 
-    // Deterministic plain background color (hex) for solid-fill only
-    const bgHue = ((hash % 360) + 180) % 360; // complement region
-    const bgSat = 10 + (hash % 6); // low saturation 10-15
-    const bgLight = 90 + (hash % 5); // very light 90-94
+    // Deterministic plain background color (hex) for solid-fill only (non-white)
+    const hueOffset = 180 + ((hash >>> 7) % 60) - 30; // 150..210 range around complement
+    const bgHue = ((hash % 360) + hueOffset + 360) % 360;
+    const bgSat = 30 + (hash % 25); // 30–54 medium saturation
+    const bgLight = 62 + ((hash >>> 4) % 16); // 62–77 mid/high lightness
     const backgroundHex = this.hslToHex(bgHue, bgSat, bgLight);
 
     // Keep a subtle surface pattern descriptor in case it's needed for micro texture on body,
