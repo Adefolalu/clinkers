@@ -1,5 +1,4 @@
-import { sdk } from "@farcaster/frame-sdk";
-import { sdk as miniAppSdk } from "@farcaster/miniapp-sdk";
+import { sdk } from "@farcaster/miniapp-sdk";
 import { useEffect, useState } from "react";
 import { useAccount, useConnect } from "wagmi";
 import { CarpletGeneratorComponent } from "./components/CarpletGeneratorComponent";
@@ -54,7 +53,7 @@ function CarpletGenerator() {
         console.debug("Mini app ready failed:", e);
       }
       try {
-        await miniAppSdk.actions.addMiniApp();
+        await sdk.actions.addMiniApp();
       } catch (e) {
         console.debug("Add mini app skipped:", e);
       }
@@ -70,7 +69,7 @@ function CarpletGenerator() {
         try {
           for (let attempt = 0; attempt < 3 && !isConnected; attempt++) {
             const farcasterConnector = connectors.find(
-              (connector) => connector.id === "farcasterFrame"
+              (connector) => connector.id === "farcasterMiniApp"
             );
             if (farcasterConnector) {
               console.log(
