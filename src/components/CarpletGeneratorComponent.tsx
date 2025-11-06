@@ -20,7 +20,7 @@ export function CarpletGeneratorComponent() {
 
   // Development mode - auto-set test FID for local testing
   const isDevelopment = import.meta.env.MODE === "development";
-  const TEST_FID = 234692; // ayojoseph's FID for testing
+  const TEST_FID = 239396; // ayojoseph's FID for testing
 
   // Generation states
   type GenerationStatus =
