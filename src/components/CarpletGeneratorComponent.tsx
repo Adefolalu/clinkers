@@ -17,6 +17,7 @@ import { useFarcasterContext } from "../hooks/useFarcasterContext";
 export function CarpletGeneratorComponent() {
   const { address, isConnected } = useAccount();
   const farcasterContext = useFarcasterContext();
+  const MINI_APP_URL = "https://the-carplet.vercel.app";
 
   // Development mode - auto-set test FID for local testing
   const isDevelopment = import.meta.env.MODE === "development";
@@ -48,6 +49,26 @@ export function CarpletGeneratorComponent() {
     imageUri: string;
   } | null>(null);
   const [walletOwnsFid, setWalletOwnsFid] = useState<boolean | null>(null);
+  const [mintedImageUrl, setMintedImageUrl] = useState<string | null>(null);
+  const [mintedMetadataUri, setMintedMetadataUri] = useState<string | null>(
+    null
+  );
+
+  // Helper to map ipfs:// to HTTP gateway
+  const ipfsToHttp = (uri: string) => {
+    if (!uri) return uri;
+    if (uri.startsWith("http")) return uri;
+    if (uri.startsWith("ipfs://")) {
+      const cidPath = uri.replace("ipfs://", "");
+      const gatewayBase = import.meta.env.VITE_PINATA_GATEWAY_DOMAIN as
+        | string
+        | undefined;
+      return gatewayBase
+        ? `https://${gatewayBase}/ipfs/${cidPath}`
+        : `https://gateway.pinata.cloud/ipfs/${cidPath}`;
+    }
+    return uri;
+  };
 
   // CAIP-19 asset IDs for swap helper
   const CAIP = {
@@ -71,6 +92,44 @@ export function CarpletGeneratorComponent() {
     functionName: "isFidMinted",
     args: userFid ? [BigInt(userFid)] : undefined,
   }) as { data: boolean | undefined };
+
+  // If minted, get tokenURI for this fid (tokenId == fid)
+  const { data: tokenUri } = useReadContract({
+    address: carplets.address as `0x${string}`,
+    abi: carplets.abi,
+    functionName: "tokenURI",
+    args: userFid ? [BigInt(userFid)] : undefined,
+    // @ts-ignore - wagmi query enabling (supported in v1/v2)
+    query: { enabled: Boolean(userFid && isFidMinted) },
+  }) as { data: string | undefined };
+
+  // When tokenUri is available, fetch metadata and extract image url
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!tokenUri || !isFidMinted) {
+        setMintedMetadataUri(null);
+        setMintedImageUrl(null);
+        return;
+      }
+      try {
+        const httpUri = ipfsToHttp(tokenUri);
+        setMintedMetadataUri(httpUri);
+        const res = await fetch(httpUri);
+        if (!res.ok) throw new Error(`Failed metadata fetch ${res.status}`);
+        const json = await res.json();
+        const img = json?.image as string | undefined;
+        setMintedImageUrl(img ? ipfsToHttp(img) : null);
+      } catch (e) {
+        if (!cancelled) {
+          setMintedImageUrl(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tokenUri, isFidMinted]);
 
   // Read CELO balance on Celo mainnet for the connected address
   const { data: celoBalanceData } = useBalance({
@@ -305,6 +364,23 @@ export function CarpletGeneratorComponent() {
     }
   };
 
+  // Share button for already-minted view (re-entry). Embeds only the image and includes mini app URL in text.
+  const handleShareMintedView = async () => {
+    if (!userFid || !mintedImageUrl) return;
+    try {
+      const text = `My Carplet #${userFid} on Celo 🎨\n\nGet yours: ${MINI_APP_URL}`;
+      await sdk.actions.composeCast({
+        text,
+        embeds: [mintedImageUrl],
+      });
+    } catch (error) {
+      console.error("Failed to compose cast (minted view):", error);
+      try {
+        await sdk.haptics.notificationOccurred("error");
+      } catch {}
+    }
+  };
+
   // No explicit retry UI in minimalist design; generator auto-runs on load.
 
   // Auto-generate once FID is available and nothing generated yet
@@ -333,29 +409,52 @@ export function CarpletGeneratorComponent() {
 
   if (isFidMinted) {
     return (
-      <div className="w-full max-w-sm mx-auto rounded-2xl border border-brand/30 bg-white/5 p-6 text-center">
-        <div className="w-16 h-16 mx-auto mb-4 bg-brand/15 rounded-full flex items-center justify-center border-2 border-brand/60">
-          <svg
-            className="w-8 h-8 text-brand"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            />
-          </svg>
-        </div>
-        <h3 className="text-xl font-bold text-brand mb-2 font-display">
-          Already Minted
+      <div className="w-full max-w-sm mx-auto rounded-2xl border border-brand/30 bg-white/5 p-6 text-center space-y-4">
+        <h3 className="text-xl font-bold text-brand font-display">
+          Your Carplet
         </h3>
-        <p className="text-sm text-slate-300">
-          Carplet for FID {userFid} has already been minted. Each FID can only
-          mint one Carplet.
-        </p>
+        <div className="relative w-full aspect-square rounded-xl overflow-hidden border border-brand/30 bg-white/5">
+          {mintedImageUrl ? (
+            <img
+              src={mintedImageUrl}
+              alt="Minted Carplet"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {mintedMetadataUri && (
+            <a
+              href={mintedMetadataUri}
+              target="_blank"
+              rel="noreferrer"
+              className="py-2 rounded-xl bg-brand text-black font-semibold"
+            >
+              View NFT
+            </a>
+          )}
+          {mintedImageUrl && (
+            <a
+              href={mintedImageUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-brand/30 text-brand font-medium"
+            >
+              Open Image
+            </a>
+          )}
+        </div>
+        <button
+          onClick={handleShareMintedView}
+          disabled={!mintedImageUrl}
+          className="w-full py-2 rounded-xl bg-brand text-black font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          Share on Farcaster
+        </button>
       </div>
     );
   }
