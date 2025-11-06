@@ -18,10 +18,10 @@
     "tagline": "Mint your Carplet",
     "ogTitle": "Carplet",
     "ogDescription": "Mint your Carplet"
-  }{
+  },
   "accountAssociation": {
     "header": "eyJmaWQiOjIzOTM5NiwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDRENEU1MjIzODRkNkYxMDkwYkZENEM0NTI3YTdkNTJERmQyMGJDYTMifQ",
     "payload": "eyJkb21haW4iOiJ0aGUtY2FycGxldC52ZXJjZWwuYXBwIn0",
     "signature": "pAMBqHC3WAeL0YJuJ0tWaC8SgXQXeOTup0UXzm7El/NLam80abpK3wIx7U9zto4TDXScvKlwQZsf/N88AzRC2Bs="
-  },
+  }
 }

@@ -8,17 +8,13 @@ import AdminPanel from "./components/AdminPanel";
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-[#1a5f7a]">
-      <div className="container mx-auto py-6 px-4 max-w-md">
-        <header className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-[#2596be] mb-1 tracking-tight drop-shadow-[0_2px_8px_rgba(37,150,190,0.3)]">
-            Carplets
+    <div className="min-h-screen bg-surface text-white">
+      <div className="container mx-auto py-10 px-4 max-w-md">
+        <header className="text-center mb-8">
+          <h1 className="font-display text-3xl md:text-4xl font-semibold text-brand">
+            CARPLET
           </h1>
-          <p className="text-[10px] text-[#2596be]/80 font-semibold tracking-widest uppercase">
-            Your Personality • Your NFT
-          </p>
         </header>
-        {/* Owner-only admin panel (withdraw treasury). Renders null for non-owners. */}
         <AdminPanel />
         <CarpletGenerator />
       </div>
@@ -136,7 +132,7 @@ function CarpletGenerator() {
     );
   }
 
-  // Show wallet connection prompt
+  // Show wallet connection prompt only for Mini App. In browser, allow generator without connection.
   if (!isConnected) {
     // While detecting environment, avoid flashing the browser connect UI
     if (isMiniApp === null) {
@@ -174,45 +170,13 @@ function CarpletGenerator() {
         </div>
       );
     }
-
-    // Browser: show AppKit button
-    return (
-      <div className="w-full">
-        <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-[#1a5f7a]/90 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(37,150,190,0.25)] p-10 text-center border border-[#2596be]/30">
-          <div className="w-16 h-16 mx-auto mb-4 bg-[#2596be]/10 rounded-full flex items-center justify-center border-2 border-[#2596be]/30">
-            <svg
-              className="w-8 h-8 text-[#2596be]"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold text-[#2596be] mb-2">
-            Connect Wallet
-          </h3>
-          <p className="text-sm text-slate-400 mb-6">
-            Connect your wallet to generate your Carplet
-          </p>
-          <div className="space-y-4">
-            <w3m-button />
-            <div className="text-xs text-slate-500">
-              Click above to see all wallet options
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    // Browser (isMiniApp === false): fall through to show the generator without wallet
   }
 
-  // Show Carplet generator if connected (in mini app mode, also need FID)
-  if (isConnected && (farcasterContext.fid || isMiniApp === false)) {
+  // Show Carplet generator:
+  // - Browser: always
+  // - Mini App: only when FID is available
+  if (isMiniApp === false || (isMiniApp === true && farcasterContext.fid)) {
     return <CarpletGeneratorComponent />;
   }
 

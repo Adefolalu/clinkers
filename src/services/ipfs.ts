@@ -21,7 +21,7 @@ export async function blobFromUrl(url: string): Promise<Blob> {
 
 export async function uploadImageBlob(
   blob: Blob,
-  filename = "mutated.png"
+  filename = "carplets.png"
 ): Promise<string> {
   const jwt = getPinataJwt();
   const form = new FormData();

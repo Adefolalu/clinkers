@@ -13,3 +13,17 @@
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
 }
+
+/* GT Alpina brand font (self-host). Place your licensed font at /public/fonts/GT-Alpina-Standard-Regular.woff2 */
+@font-face {
+  font-family: "GT Alpina";
+  src: url("/fonts/GT-Alpina-Standard-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Minimal brand surface */
+body {
+  background: #0b0b0b;
+}

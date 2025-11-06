@@ -10,7 +10,6 @@ import { mintCarplet } from "../services/mintService";
 import { ImageGenerationService } from "../services/imageGeneration";
 import { useReadContract, useAccount } from "wagmi";
 import { carplets } from "../constants/Abi";
-import { formatEther } from "viem";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useFarcasterContext } from "../hooks/useFarcasterContext";
 
@@ -33,7 +32,7 @@ export function CarpletGeneratorComponent() {
     | "error";
 
   const [status, setStatus] = useState<GenerationStatus>("idle");
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [userFid, setUserFid] = useState<number | null>(
     isDevelopment ? TEST_FID : null
   );
@@ -51,24 +50,12 @@ export function CarpletGeneratorComponent() {
   const imageService = useMemo(() => new ImageGenerationService(), []);
 
   // Read contract data
-  const { data: mintFee } = useReadContract({
-    address: carplets.address as `0x${string}`,
-    abi: carplets.abi,
-    functionName: "mintFee",
-  }) as { data: bigint | undefined };
-
   const { data: isFidMinted } = useReadContract({
     address: carplets.address as `0x${string}`,
     abi: carplets.abi,
     functionName: "isFidMinted",
     args: userFid ? [BigInt(userFid)] : undefined,
   }) as { data: boolean | undefined };
-
-  const { data: totalSupply } = useReadContract({
-    address: carplets.address as `0x${string}`,
-    abi: carplets.abi,
-    functionName: "totalSupply",
-  }) as { data: bigint | undefined };
 
   // Initialize with Farcaster context FID
   useEffect(() => {
@@ -259,69 +246,28 @@ export function CarpletGeneratorComponent() {
     }
   };
 
-  const handleRetry = () => {
-    setStatus("idle");
-    setError(null);
-    setGeneratedImageUrl(null);
-    setNeynarUser(null);
-  };
+  // No explicit retry UI in minimalist design; generator auto-runs on load.
 
-  if (!isConnected) {
-    return (
-      <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-[#1a5f7a]/90 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(37,150,190,0.25)] p-8 border border-[#2596be]/30">
-        <div className="text-center">
-          <h3 className="text-xl font-bold text-[#2596be] mb-2">
-            Connect Wallet
-          </h3>
-          <p className="text-sm text-slate-400 mb-6">
-            Connect your wallet to generate your personalized Carplet
-          </p>
-          <w3m-button />
-        </div>
-      </div>
-    );
-  }
+  // Auto-generate once FID is available and nothing generated yet
+  useEffect(() => {
+    if (status === "idle" && userFid && !generatedImageUrl) {
+      handleGenerateCarplet();
+    }
+  }, [status, userFid, generatedImageUrl]);
 
+  // Minimal fallback if no FID (browser-only). Keep structure simple: image placeholder + disabled mint
   if (!userFid) {
     return (
-      <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-[#1a5f7a]/90 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(37,150,190,0.25)] p-8 border border-[#2596be]/30">
-        <div className="text-center">
-          <h3 className="text-xl font-bold text-[#2596be] mb-2">
-            Enter Farcaster ID
-          </h3>
-          <p className="text-sm text-slate-400 mb-4">
-            Enter any FID to preview their Carplet. You'll need to own the FID
-            to mint it.
-          </p>
-          <input
-            type="number"
-            placeholder="Enter your FID (e.g., 239396)"
-            value={userFid || ""}
-            onChange={(e) => setUserFid(parseInt(e.target.value) || null)}
-            className="w-full px-4 py-3 bg-slate-700/50 border border-[#2596be]/30 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-[#2596be] mb-4"
-          />
-          <div className="flex gap-2 mb-4">
-            <button
-              onClick={() => setUserFid(239396)}
-              className="flex-1 py-2 bg-slate-600/50 hover:bg-slate-600 text-slate-200 text-sm rounded-lg transition-colors"
-            >
-              Test FID: 239396
-            </button>
-            <button
-              onClick={() => setUserFid(3)}
-              className="flex-1 py-2 bg-slate-600/50 hover:bg-slate-600 text-slate-200 text-sm rounded-lg transition-colors"
-            >
-              Dan (FID: 3)
-            </button>
-          </div>
-          <button
-            onClick={handleGenerateCarplet}
-            disabled={!userFid}
-            className="w-full py-3 bg-[#2596be] hover:bg-[#1d7a9f] disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
-          >
-            Continue with FID {userFid}
-          </button>
+      <div className="flex flex-col items-center gap-6">
+        <div className="w-full aspect-square max-w-sm rounded-2xl border border-brand/40 bg-white/5 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full border-2 border-brand border-t-transparent animate-spin" />
         </div>
+        <button
+          disabled
+          className="w-full max-w-sm py-3 rounded-xl bg-brand text-black font-semibold opacity-60 cursor-not-allowed"
+        >
+          Mint
+        </button>
       </div>
     );
   }
@@ -358,206 +304,39 @@ export function CarpletGeneratorComponent() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-[#1a5f7a]/90 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(37,150,190,0.25)] overflow-hidden border border-[#2596be]/30">
-      {/* Development mode indicator */}
-      {isDevelopment && (
-        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center">
-          <p className="text-yellow-300 text-xs font-medium">
-            🚧 Development Mode - FID {userFid} auto-loaded for testing
-          </p>
-        </div>
-      )}
-
-      {/* Top accent */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#2596be] to-transparent"></div>
-
-      {/* Header */}
-      <div className="p-6 text-center border-b border-[#2596be]/20">
-        <h2 className="text-2xl font-bold text-[#2596be] mb-2">
-          Generate Your Carplet
-        </h2>
-        <p className="text-sm text-slate-400">
-          {totalSupply !== undefined && `${totalSupply}/10,000 minted • `}
-          Personalized Farcaster NFT • FID: {userFid}
-        </p>
-      </div>
-
-      {/* Content */}
-      <div className="p-6 space-y-6">
-        {/* Image Container */}
-        <div className="relative w-full aspect-square">
-          {generatedImageUrl ? (
-            <div className="relative group">
-              <img
-                src={generatedImageUrl}
-                alt="Generated Carplet"
-                className="w-full h-full object-cover rounded-2xl shadow-lg ring-1 ring-[#2596be]/20"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#2596be]/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
-            </div>
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-slate-700/50 via-slate-800/50 to-[#1a5f7a]/50 rounded-2xl flex items-center justify-center border border-[#2596be]/20">
-              <div className="text-center px-4">
-                {status === "verifying" && (
-                  <>
-                    <div className="relative inline-block mb-4">
-                      <div className="w-16 h-16 border-[3px] border-[#2596be]/30 rounded-full absolute"></div>
-                      <div className="w-16 h-16 border-[3px] border-[#2596be] border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                    <p className="text-sm font-semibold text-[#2596be]">
-                      Verifying FID ownership...
-                    </p>
-                  </>
-                )}
-                {status === "generating" && (
-                  <>
-                    <div className="relative inline-block mb-4">
-                      <div className="w-16 h-16 border-[3px] border-[#2596be]/30 rounded-full absolute"></div>
-                      <div className="w-16 h-16 border-[3px] border-[#2596be] border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                    <p className="text-sm font-semibold text-[#2596be]">
-                      Generating your Carplet...
-                    </p>
-                  </>
-                )}
-                {status === "error" && (
-                  <>
-                    <div className="w-16 h-16 mx-auto mb-4 bg-red-500/10 rounded-full flex items-center justify-center border-2 border-red-500/30">
-                      <svg
-                        className="w-8 h-8 text-red-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                        />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-semibold text-red-300 mb-2">
-                      Generation Failed
-                    </p>
-                    <p className="text-xs text-red-400 mb-4">{error}</p>
-                    <button
-                      onClick={handleRetry}
-                      className="px-4 py-2 bg-[#2596be] hover:bg-[#1d7a9f] text-white text-xs font-semibold rounded-lg transition-colors"
-                    >
-                      Try Again
-                    </button>
-                  </>
-                )}
-                {status === "idle" && (
-                  <>
-                    <div className="w-16 h-16 mx-auto mb-4 bg-[#2596be]/20 rounded-full flex items-center justify-center border-2 border-[#2596be]/50">
-                      <svg
-                        className="w-8 h-8 text-[#2596be]"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-semibold text-[#2596be] mb-2">
-                      Ready to Generate
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      Click below to create your personalized Carplet
-                    </p>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* User Info */}
-        {neynarUser && (
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-[#2596be]/20">
-            <div className="flex items-center gap-3 mb-3">
-              {neynarUser.pfp_url && (
-                <img
-                  src={neynarUser.pfp_url}
-                  alt="Profile"
-                  className="w-10 h-10 rounded-full"
-                />
-              )}
-              <div>
-                <h4 className="font-semibold text-white">
-                  {neynarUser.display_name || neynarUser.username}
-                </h4>
-                <p className="text-sm text-slate-400">
-                  @{neynarUser.username} • FID {neynarUser.fid}
-                </p>
-              </div>
-            </div>
-            <div className="text-xs text-slate-400 grid grid-cols-2 gap-4">
-              <div>Followers: {neynarUser.follower_count}</div>
-              <div>Following: {neynarUser.following_count}</div>
-            </div>
+    <div className="flex flex-col items-center gap-6">
+      <div className="relative w-full max-w-sm aspect-square rounded-2xl border border-brand/40 bg-white/5 overflow-hidden">
+        {generatedImageUrl ? (
+          <img
+            src={generatedImageUrl}
+            alt="Carplet"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full border-2 border-brand border-t-transparent animate-spin" />
           </div>
         )}
+      </div>
 
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          {status === "idle" && (
-            <button
-              onClick={handleGenerateCarplet}
-              className="w-full py-3 bg-[#2596be] hover:bg-[#1d7a9f] text-white font-semibold rounded-xl transition-colors shadow-lg"
-            >
-              Generate My Carplet
-            </button>
-          )}
-
-          {status === "ready" && (
-            <>
-              <button
-                onClick={handleGenerateCarplet}
-                className="w-full py-2.5 text-[#2596be] bg-slate-700/50 hover:bg-slate-700 border border-[#2596be]/30 font-medium rounded-xl transition-colors"
-              >
-                🔄 Regenerate
-              </button>
-              <button
-                onClick={handleMintCarplet}
-                className="w-full py-3 bg-[#2596be] hover:bg-[#1d7a9f] text-white font-semibold rounded-xl transition-colors shadow-lg"
-              >
-                Mint Carplet{" "}
-                {mintFee ? `• ${formatEther(mintFee)} CELO` : "• FREE"}
-              </button>
-            </>
-          )}
-
-          {status === "minting" && (
-            <button
-              disabled
-              className="w-full py-3 bg-gray-600 text-white font-semibold rounded-xl opacity-60 cursor-not-allowed"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                Minting...
-              </span>
-            </button>
-          )}
-        </div>
+      <div className="w-full max-w-sm">
+        <button
+          onClick={handleMintCarplet}
+          disabled={status !== "ready" || !isConnected}
+          className="w-full py-3 rounded-xl bg-brand text-black font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {isConnected ? "Mint" : "Connect wallet to mint"}
+        </button>
       </div>
 
       {/* Success Modal */}
       {status === "success" && mintSuccessData && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-[#1a5f7a]/90 rounded-3xl shadow-xl max-w-md w-full border border-[#2596be]/30 overflow-hidden">
-            <div className="h-[2px] bg-gradient-to-r from-transparent via-[#2596be] to-transparent"></div>
+          <div className="bg-surface rounded-3xl shadow-xl max-w-md w-full border border-brand/30 overflow-hidden">
             <div className="p-6 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-[#2596be]/20 rounded-full flex items-center justify-center border-2 border-[#2596be]">
+              <div className="w-16 h-16 mx-auto mb-4 bg-brand/15 rounded-full flex items-center justify-center border-2 border-brand">
                 <svg
-                  className="w-8 h-8 text-[#2596be]"
+                  className="w-8 h-8 text-brand"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -570,14 +349,14 @@ export function CarpletGeneratorComponent() {
                   />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-[#2596be] mb-2">
+              <h2 className="text-2xl font-bold text-brand mb-2">
                 Carplet Minted!
               </h2>
               <p className="text-sm text-slate-300 mb-4">
                 Carplet #{mintSuccessData.fid.toString()}
               </p>
 
-              <div className="mb-6 rounded-2xl overflow-hidden border border-[#2596be]/30 shadow-lg">
+              <div className="mb-6 rounded-2xl overflow-hidden border border-brand/30 shadow-lg">
                 <img
                   src={mintSuccessData.imageUri}
                   alt="Minted Carplet"
@@ -585,9 +364,9 @@ export function CarpletGeneratorComponent() {
                 />
               </div>
 
-              <div className="bg-slate-800/50 rounded-xl p-3 mb-4 text-xs">
+              <div className="bg-white/5 rounded-xl p-3 mb-4 text-xs">
                 <p className="text-slate-400 mb-1">Transaction Hash:</p>
-                <p className="text-[#2596be] font-mono break-all">
+                <p className="text-brand font-mono break-all">
                   {mintSuccessData.hash.slice(0, 10)}...
                   {mintSuccessData.hash.slice(-8)}
                 </p>
@@ -596,7 +375,7 @@ export function CarpletGeneratorComponent() {
               <div className="space-y-2">
                 <button
                   onClick={handleShare}
-                  className="w-full py-3 bg-[#2596be] hover:bg-[#1d7a9f] text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-brand text-black font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   <svg
                     className="w-5 h-5"
@@ -609,7 +388,7 @@ export function CarpletGeneratorComponent() {
                 </button>
                 <button
                   onClick={() => setStatus("idle")}
-                  className="w-full py-2.5 text-[#2596be] bg-slate-700/50 hover:bg-slate-700 border border-[#2596be]/30 font-medium rounded-xl transition-colors"
+                  className="w-full py-2.5 text-brand bg-white/5 hover:bg-white/10 border border-brand/30 font-medium rounded-xl transition-colors"
                 >
                   Close
                 </button>
