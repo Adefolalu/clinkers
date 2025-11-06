@@ -8,7 +8,7 @@ import {
 import { blobFromUrl, uploadImageBlob, uploadMetadata } from "../services/ipfs";
 import { mintCarplet } from "../services/mintService";
 import { ImageGenerationService } from "../services/imageGeneration";
-import { useReadContract, useAccount } from "wagmi";
+import { useReadContract, useAccount, useBalance } from "wagmi";
 import { formatEther } from "viem";
 import { carplets } from "../constants/Abi";
 import { sdk } from "@farcaster/miniapp-sdk";
@@ -49,6 +49,13 @@ export function CarpletGeneratorComponent() {
   } | null>(null);
   const [walletOwnsFid, setWalletOwnsFid] = useState<boolean | null>(null);
 
+  // CAIP-19 asset IDs for swap helper
+  const CAIP = {
+    CELO_NATIVE: "eip155:42220/native",
+    BASE_NATIVE: "eip155:8453/native",
+    BASE_USDC: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  } as const;
+
   const imageService = useMemo(() => new ImageGenerationService(), []);
 
   // Read contract data
@@ -64,6 +71,15 @@ export function CarpletGeneratorComponent() {
     functionName: "isFidMinted",
     args: userFid ? [BigInt(userFid)] : undefined,
   }) as { data: boolean | undefined };
+
+  // Read CELO balance on Celo mainnet for the connected address
+  const { data: celoBalanceData } = useBalance({
+    address: address as `0x${string}` | undefined,
+    chainId: 42220,
+  });
+  const celoBalanceWei = celoBalanceData?.value ?? 0n;
+  const mintFeeWei = mintFee ?? 0n;
+  const hasEnoughCelo = celoBalanceWei >= mintFeeWei;
 
   // Initialize with Farcaster context FID
   useEffect(() => {
@@ -259,12 +275,26 @@ export function CarpletGeneratorComponent() {
     }
   };
 
+  const handleSwapForCelo = async (sellToken: string) => {
+    try {
+      await sdk.actions.swapToken({
+        sellToken,
+        buyToken: CAIP.CELO_NATIVE,
+      });
+    } catch (e) {
+      console.error("Swap action failed:", e);
+      try {
+        await sdk.haptics.notificationOccurred("error");
+      } catch {}
+    }
+  };
+
   const handleShare = async () => {
     if (!mintSuccessData || !neynarUser) return;
 
     try {
-      const text = `Just minted my Carplet #${mintSuccessData.fid}! 🎨\\n\\nGet your personalized Farcaster NFT on Celo`;
       const miniAppUrl = "https://the-carplet.vercel.app";
+      const text = `Just minted my Carplet #${mintSuccessData.fid}! 🎨\n\nGet your personalized Carplet on Celo`;
 
       await sdk.actions.composeCast({
         text,
@@ -351,10 +381,10 @@ export function CarpletGeneratorComponent() {
         )}
       </div>
 
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm space-y-2">
         <button
           onClick={handleMintCarplet}
-          disabled={status !== "ready" || !isConnected}
+          disabled={status !== "ready" || !isConnected || !hasEnoughCelo}
           className="w-full py-3 rounded-xl bg-brand text-black font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isConnected
@@ -378,6 +408,30 @@ export function CarpletGeneratorComponent() {
               </span>
             )}
           </p>
+        )}
+
+        {/* Insufficient CELO helper: offer Base ETH or Base USDC swap to CELO */}
+        {isConnected && status !== "minting" && !hasEnoughCelo && (
+          <div className="mt-1 text-center text-xs">
+            <p className="mb-2 text-slate-300">
+              Insufficient CELO to cover the mint fee
+              {mintFee ? ` (${formatEther(mintFee)} CELO)` : ""}. Get CELO here:
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleSwapForCelo(CAIP.BASE_NATIVE)}
+                className="py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-brand/40 text-brand font-medium transition-colors"
+              >
+                With ETH (Base)
+              </button>
+              <button
+                onClick={() => handleSwapForCelo(CAIP.BASE_USDC)}
+                className="py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-brand/40 text-brand font-medium transition-colors"
+              >
+                With USDC (Base)
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
