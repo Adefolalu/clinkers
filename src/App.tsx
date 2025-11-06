@@ -103,12 +103,12 @@ function CarpletGenerator() {
   if (farcasterContext.isLoading) {
     return (
       <div className="w-full">
-        <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-[#1a5f7a]/90 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(37,150,190,0.25)] p-10 text-center border border-[#2596be]/30">
+        <div className="rounded-3xl border border-brand/30 bg-white/5 p-10 text-center">
           <div className="relative inline-block mb-4">
-            <div className="w-14 h-14 border-[3px] border-[#2596be]/30 rounded-full absolute"></div>
-            <div className="w-14 h-14 border-[3px] border-[#2596be] border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-14 h-14 border-[3px] border-brand/30 rounded-full absolute"></div>
+            <div className="w-14 h-14 border-[3px] border-brand border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <p className="text-sm font-semibold text-[#2596be] tracking-wide">
+          <p className="text-sm font-semibold text-brand tracking-wide">
             Loading your Farcaster profile...
           </p>
         </div>
@@ -138,10 +138,10 @@ function CarpletGenerator() {
     if (isMiniApp === null) {
       return (
         <div className="w-full">
-          <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-[#1a5f7a]/90 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(37,150,190,0.25)] p-10 text-center border border-[#2596be]/30">
+          <div className="rounded-3xl border border-brand/30 bg-white/5 p-10 text-center">
             <div className="relative inline-block mb-4">
-              <div className="w-14 h-14 border-[3px] border-[#2596be]/30 rounded-full absolute"></div>
-              <div className="w-14 h-14 border-[3px] border-[#2596be] border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-14 h-14 border-[3px] border-brand/30 rounded-full absolute"></div>
+              <div className="w-14 h-14 border-[3px] border-brand border-t-transparent rounded-full animate-spin"></div>
             </div>
             <p className="text-sm text-slate-300">Preparing environment...</p>
           </div>
@@ -153,16 +153,16 @@ function CarpletGenerator() {
     if (isMiniApp === true) {
       return (
         <div className="w-full">
-          <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-[#1a5f7a]/90 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(37,150,190,0.25)] p-10 text-center border border-[#2596be]/30">
+          <div className="rounded-3xl border border-brand/30 bg-white/5 p-10 text-center">
             <div className="relative inline-block mb-4">
-              <div className="w-14 h-14 border-[3px] border-[#2596be]/30 rounded-full absolute"></div>
-              <div className="w-14 h-14 border-[3px] border-[#2596be] border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-14 h-14 border-[3px] border-brand/30 rounded-full absolute"></div>
+              <div className="w-14 h-14 border-[3px] border-brand border-t-transparent rounded-full animate-spin"></div>
             </div>
             <p className="text-sm text-slate-300 mb-1">
               Connecting Warpcast wallet...
             </p>
             {farcasterContext.fid && (
-              <p className="text-xs text-[#2596be]/80">
+              <p className="text-xs text-brand/80">
                 FID: {farcasterContext.fid}
               </p>
             )}
@@ -183,11 +183,11 @@ function CarpletGenerator() {
   // If connected but no FID detected (mini app only)
   return (
     <div className="w-full">
-      <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-[#1a5f7a]/90 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(37,150,190,0.25)] p-8 border border-[#2596be]/30">
+      <div className="rounded-3xl border border-brand/30 bg-white/5 p-8">
         <div className="text-center">
-          <div className="w-20 h-20 mx-auto mb-4 bg-[#2596be]/10 rounded-full flex items-center justify-center border-2 border-[#2596be]/30">
+          <div className="w-20 h-20 mx-auto mb-4 bg-brand/10 rounded-full flex items-center justify-center border-2 border-brand/30">
             <svg
-              className="w-10 h-10 text-[#2596be]"
+              className="w-10 h-10 text-brand"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -200,7 +200,7 @@ function CarpletGenerator() {
               />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-[#2596be] mb-2">
+          <h3 className="text-xl font-bold text-brand mb-2">
             Farcaster Profile Not Found
           </h3>
           <p className="text-sm text-slate-400 mb-6">
