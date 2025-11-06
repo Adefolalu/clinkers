@@ -7,7 +7,7 @@
     "imageUrl": "https://the-carplet.vercel.app/splash.png",
     "buttonTitle": "Mint your Carplet",
     "splashImageUrl": "https://the-carplet.vercel.app/splash.png",
-    "splashBackgroundColor": "#FCFF52 ",
+    "splashBackgroundColor": "#FCFF52",
     "webhookUrl": "https://api.neynar.com/f/app/dd72c8df-f5b5-40d7-8bcd-0986f9b239b9/event",
     "subtitle": "The carplet",
     "description": "Carplet on celo",

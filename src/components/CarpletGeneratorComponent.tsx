@@ -9,6 +9,7 @@ import { blobFromUrl, uploadImageBlob, uploadMetadata } from "../services/ipfs";
 import { mintCarplet } from "../services/mintService";
 import { ImageGenerationService } from "../services/imageGeneration";
 import { useReadContract, useAccount } from "wagmi";
+import { formatEther } from "viem";
 import { carplets } from "../constants/Abi";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useFarcasterContext } from "../hooks/useFarcasterContext";
@@ -46,10 +47,17 @@ export function CarpletGeneratorComponent() {
     fid: bigint;
     imageUri: string;
   } | null>(null);
+  const [walletOwnsFid, setWalletOwnsFid] = useState<boolean | null>(null);
 
   const imageService = useMemo(() => new ImageGenerationService(), []);
 
   // Read contract data
+  const { data: mintFee } = useReadContract({
+    address: carplets.address as `0x${string}`,
+    abi: carplets.abi,
+    functionName: "mintFee",
+  }) as { data: bigint | undefined };
+
   const { data: isFidMinted } = useReadContract({
     address: carplets.address as `0x${string}`,
     abi: carplets.abi,
@@ -63,6 +71,27 @@ export function CarpletGeneratorComponent() {
       setUserFid(farcasterContext.fid);
     }
   }, [farcasterContext.fid, userFid]);
+
+  // Proactively check if connected wallet owns the FID (for UX hint under the button)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (userFid && address && isConnected) {
+        try {
+          setWalletOwnsFid(null);
+          const ok = await verifyFidOwnership(userFid, address);
+          if (!cancelled) setWalletOwnsFid(ok);
+        } catch (e) {
+          if (!cancelled) setWalletOwnsFid(false);
+        }
+      } else {
+        setWalletOwnsFid(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userFid, address, isConnected]);
 
   const handleGenerateCarplet = async () => {
     if (!userFid) {
@@ -190,7 +219,7 @@ export function CarpletGeneratorComponent() {
       const result = await mintCarplet({
         fid: BigInt(userFid),
         metadataURI: metadataUri,
-        feeEth: "0", // Free mint for now
+        feeEth: mintFee ? formatEther(mintFee) : "0",
       });
 
       // Success haptic
@@ -313,8 +342,13 @@ export function CarpletGeneratorComponent() {
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-4">
             <div className="w-12 h-12 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+            <p className="text-sm text-slate-300">
+              {status === "verifying"
+                ? "Checking FID..."
+                : "Creating your Carplet..."}
+            </p>
           </div>
         )}
       </div>
@@ -325,8 +359,28 @@ export function CarpletGeneratorComponent() {
           disabled={status !== "ready" || !isConnected}
           className="w-full py-3 rounded-xl bg-brand text-black font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {isConnected ? "Mint" : "Connect wallet to mint"}
+          {isConnected
+            ? `Mint${mintFee ? ` • ${formatEther(mintFee)} CELO` : ""}`
+            : "Connect wallet to mint"}
         </button>
+        {/* Ownership hint */}
+        {isConnected && (
+          <p className="mt-2 text-xs text-slate-400 text-center">
+            {walletOwnsFid === null &&
+              "Verifying wallet ownership for this FID..."}
+            {walletOwnsFid === false && (
+              <span className="text-red-300">
+                Connected wallet does not own FID {userFid}. You can still
+                preview, but mint will be blocked.
+              </span>
+            )}
+            {walletOwnsFid === true && (
+              <span className="text-emerald-300">
+                Wallet verified for FID {userFid}.
+              </span>
+            )}
+          </p>
+        )}
       </div>
 
       {/* Success Modal */}
