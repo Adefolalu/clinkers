@@ -248,7 +248,7 @@ export function CarpletGeneratorComponent() {
 
     try {
       const text = `Just minted my Carplet #${mintSuccessData.fid}! 🎨\\n\\nGet your personalized Farcaster NFT on Celo`;
-      const miniAppUrl = "https://carplets.vercel.app";
+      const miniAppUrl = "https://the-carplet.vercel.app";
 
       await sdk.actions.composeCast({
         text,
