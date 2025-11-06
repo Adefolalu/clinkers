@@ -33,6 +33,55 @@ export class ImageGenerationService {
     }
   }
 
+  // ---------- Color utilities (local) ----------
+  private clamp(n: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, n));
+  }
+
+  private hslToHex(h: number, s: number, l: number) {
+    // Normalize and clamp
+    h = ((h % 360) + 360) % 360;
+    s = this.clamp(s, 0, 100) / 100;
+    l = this.clamp(l, 0, 100) / 100;
+
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = l - c / 2;
+    let r = 0,
+      g = 0,
+      b = 0;
+    if (h < 60) {
+      r = c;
+      g = x;
+      b = 0;
+    } else if (h < 120) {
+      r = x;
+      g = c;
+      b = 0;
+    } else if (h < 180) {
+      r = 0;
+      g = c;
+      b = x;
+    } else if (h < 240) {
+      r = 0;
+      g = x;
+      b = c;
+    } else if (h < 300) {
+      r = x;
+      g = 0;
+      b = c;
+    } else {
+      r = c;
+      g = 0;
+      b = x;
+    }
+    const toHex = (v: number) => {
+      const n = Math.round((v + m) * 255);
+      return n.toString(16).padStart(2, "0");
+    };
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+  }
+
   /**
    * Deterministically derive a style signature (palette, background, silhouette, accessories)
    * from a user's fid (and optionally username). This yields strong uniqueness across users.
@@ -40,7 +89,10 @@ export class ImageGenerationService {
   private deriveStyleSignature(fid?: number, username?: string) {
     const basis = `${fid ?? "anon"}-${username ?? "user"}`;
     const h = (str: string) =>
-      Array.from(str).reduce((acc, ch, i) => (acc * 33 + ch.charCodeAt(0) + i) >>> 0, 5381);
+      Array.from(str).reduce(
+        (acc, ch, i) => (acc * 33 + ch.charCodeAt(0) + i) >>> 0,
+        5381
+      );
 
     const hash = h(basis);
 
@@ -64,24 +116,21 @@ export class ImageGenerationService {
       { name: "Forest Dream", colors: ["#0B3D2E", "#35D07F", "#9EF01A"] },
     ];
 
-    const backgrounds = [
-      "premium gradient with soft volumetric lighting",
-      "abstract geometric shapes with depth-of-field",
-      "neon grid with vaporwave haze",
-      "celestial starscape with subtle bokeh",
-      "nature mist with soft godrays",
-      "liquid glass waves with reflections",
-      "studio softbox lighting on color field",
-    ];
+    // Deterministic plain background color (hex) for solid-fill only
+    const bgHue = ((hash % 360) + 180) % 360; // complement region
+    const bgSat = 10 + (hash % 6); // low saturation 10-15
+    const bgLight = 90 + (hash % 5); // very light 90-94
+    const backgroundHex = this.hslToHex(bgHue, bgSat, bgLight);
 
+    // Keep a subtle surface pattern descriptor in case it's needed for micro texture on body,
+    // but DO NOT apply to background (background must remain plain solid).
     const patterns = [
       "subtle circuit traces",
-      "tiny stars and sparkles",
-      "wave ripples",
+      "tiny metallic speckles",
+      "soft micro-dots",
       "micro chevrons",
       "diamond gloss facets",
-      "grain gradient film",
-      "hex micro-tiling",
+      "gentle hex tiling",
     ];
 
     const accessoryPool = [
@@ -115,7 +164,7 @@ export class ImageGenerationService {
 
     const silhouette = pick(silhouettes, hash >>> 3);
     const palette = pick(palettes, hash >>> 5);
-    const background = pick(backgrounds, hash >>> 7);
+    const background = `plain solid color ${backgroundHex}`;
     const pattern = pick(patterns, hash >>> 9);
     const accessories = pickN(accessoryPool, 3 + (hash % 2), hash >>> 11);
 
@@ -123,6 +172,7 @@ export class ImageGenerationService {
       silhouette,
       palette,
       background,
+      backgroundHex,
       pattern,
       accessories,
     };
@@ -201,7 +251,7 @@ export class ImageGenerationService {
         const paletteText = `${style.palette.colors.join(", ")}`;
         const accessoriesText = style.accessories.join(", ");
 
-        // Create variation prompt based on personality or use custom prompt (we always wrap custom with our remix brief)
+        // Create variation prompt based on personality or use custom prompt (custom prompt is authoritative and may include DESIGN_SPEC)
         let promptText = customPrompt;
 
         if (!customPrompt) {
@@ -215,7 +265,7 @@ export class ImageGenerationService {
 STYLE SIGNATURE (deterministic – do not ignore):
 - Silhouette/structure: ${style.silhouette}
 - Color palette (primary → accent): ${paletteText}
-- Background: ${style.background}
+- Background: PLAIN SOLID ${style.background} (use exactly ${style.backgroundHex}). No gradients, no shapes, no textures, no particles.
 - Surface pattern: ${style.pattern}
 - Accessories (2–4 max from): ${accessoriesText}
 
@@ -229,9 +279,10 @@ REQUIREMENTS:
 UNIQUENESS SEED: ${seedHash}`;
         }
 
-        // If a high-level personality prompt was provided by upstream (customPrompt), prepend our remix brief to it
+        // If a high-level personality prompt was provided by upstream, keep it authoritative
+        // and avoid duplicating content. The upstream prompt may contain a DESIGN_SPEC that should be followed strictly.
         if (customPrompt) {
-          promptText = `${promptText}\n\nPERSONALITY NOTES (use to tune expression, attitude and motifs):\n${customPrompt}`;
+          promptText = `${customPrompt}`;
         }
 
         // Prepare content parts - include base image and optional PFP
@@ -306,6 +357,7 @@ UNIQUENESS SEED: ${seedHash}`;
                   silhouette: style.silhouette,
                   palette: style.palette,
                   background: style.background,
+                  backgroundHex: style.backgroundHex,
                   pattern: style.pattern,
                   accessories: style.accessories,
                 },

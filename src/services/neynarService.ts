@@ -46,6 +46,199 @@ export interface NeynarCastsResponse {
   };
 }
 
+// -----------------------------
+// Deterministic design utilities
+// -----------------------------
+
+function hashString(input: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash +=
+      (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+  }
+  // Ensure positive 32-bit
+  return hash >>> 0;
+}
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function hslToHex(h: number, s: number, l: number) {
+  h = ((h % 360) + 360) % 360;
+  s = clamp(s, 0, 100) / 100;
+  l = clamp(l, 0, 100) / 100;
+
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0,
+    g = 0,
+    b = 0;
+  if (h < 60) {
+    r = c;
+    g = x;
+    b = 0;
+  } else if (h < 120) {
+    r = x;
+    g = c;
+    b = 0;
+  } else if (h < 180) {
+    r = 0;
+    g = c;
+    b = x;
+  } else if (h < 240) {
+    r = 0;
+    g = x;
+    b = c;
+  } else if (h < 300) {
+    r = x;
+    g = 0;
+    b = c;
+  } else {
+    r = c;
+    g = 0;
+    b = x;
+  }
+  const toHex = (v: number) => {
+    const n = Math.round((v + m) * 255);
+    return n.toString(16).padStart(2, "0");
+  };
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+}
+
+export interface CarpletDesignSpec {
+  backgroundHex: string;
+  primaryHex: string;
+  secondaryHex: string;
+  accentHex: string;
+  silhouette: string; // compact round | chibi | tall slim | athletic | techy angular
+  accessories: string[]; // 2-4 items
+  expression: string; // calm / cheerful / confident / mischievous / focused
+}
+
+function deriveCarpletDesignSpec(
+  user: NeynarUser,
+  traits: string[],
+  interests: string[]
+): CarpletDesignSpec {
+  const seedStr = `${user.fid}-${user.username}-${user.follower_count}-${user.following_count}-${user.power_badge ? 1 : 0}`;
+  const seed = hashString(seedStr);
+
+  // Base hue influenced by username/fid; biases: builders/tech -> cooler hues; creatives -> warmer;
+  let baseHue = seed % 360;
+  if (
+    traits.includes("Builder") ||
+    traits.includes("Technical") ||
+    traits.includes("Frame Developer")
+  ) {
+    baseHue = (baseHue * 0.5 + 200) % 360; // push toward cyan/blue
+  } else if (traits.includes("Creative") || traits.includes("Artistic")) {
+    baseHue = (baseHue * 0.5 + 25) % 360; // push toward orange
+  } else if (
+    traits.includes("Crypto Native") ||
+    interests.includes("Blockchain")
+  ) {
+    baseHue = (baseHue * 0.5 + 135) % 360; // green bias
+  }
+
+  // Saturation/lightness based on influence/activity
+  const influence = clamp(user.follower_count, 0, 20000) / 20000; // 0..1
+  const saturation =
+    55 + Math.round((seed % 30) * 0.7) + Math.round(influence * 10); // 55-86
+  const lightness =
+    58 + Math.round(((seed >> 4) % 20) * 0.7) - Math.round(influence * 8); // ~50-72
+
+  const primaryHex = hslToHex(baseHue, saturation, lightness);
+  const secondaryHex = hslToHex(
+    (baseHue + 30) % 360,
+    clamp(saturation - 10, 35, 95),
+    clamp(lightness - 10, 30, 85)
+  );
+  const accentHex = hslToHex(
+    (baseHue + 300) % 360,
+    clamp(saturation + 10, 35, 95),
+    clamp(lightness + 5, 30, 85)
+  );
+
+  // Background color should be plain and contrasting
+  const bgHue = (baseHue + 180) % 360; // complement for separation
+  const bgSat = clamp(8 + (seed % 8), 8, 16); // low saturation
+  const bgLight = 88 + (seed % 6); // 88-94 very light solid
+  const backgroundHex = hslToHex(bgHue, bgSat, bgLight);
+
+  // Silhouette based on traits
+  let silhouette = "compact round";
+  if (traits.includes("Influential") || traits.includes("Thought Leader"))
+    silhouette = "tall slim";
+  if (traits.includes("Athletic")) silhouette = "athletic";
+  if (traits.includes("Builder") || traits.includes("Technical"))
+    silhouette = "techy angular";
+  if (traits.includes("Creative") || traits.includes("Artistic"))
+    silhouette = "chibi";
+
+  // Expression
+  let expression = "confident";
+  if (traits.includes("Humorous")) expression = "mischievous";
+  else if (traits.includes("Creative")) expression = "cheerful";
+  else if (traits.includes("Technical")) expression = "focused";
+
+  // Accessories pool
+  const pool = new Set<string>();
+  if (
+    traits.includes("Builder") ||
+    traits.includes("Technical") ||
+    traits.includes("Project Creator")
+  ) {
+    pool.add("tech goggles");
+    pool.add("tiny antenna");
+    pool.add("holographic code symbols");
+  }
+  if (traits.includes("Influential") || traits.includes("Thought Leader")) {
+    pool.add("mini crown");
+    pool.add("leadership aura");
+  }
+  if (traits.includes("DeFi Trader") || interests.includes("Trading")) {
+    pool.add("trading glasses");
+    pool.add("mini chart charm");
+  }
+  if (traits.includes("Creative") || traits.includes("Artistic")) {
+    pool.add("paintbrush");
+    pool.add("color splatter accents");
+  }
+  if (traits.includes("NFT Enthusiast")) {
+    pool.add("collectible gem pin");
+  }
+  if (traits.includes("Power User") || traits.includes("Farcaster OG")) {
+    pool.add("OG badge");
+  }
+  // Ensure some generic options
+  pool.add("Celo pendant");
+  pool.add("leaf sprout");
+
+  // Deterministically pick 2-4 accessories
+  const accessories = Array.from(pool);
+  const selected: string[] = [];
+  for (let i = 0; i < accessories.length && selected.length < 4; i++) {
+    const bit = (seed >> i % 16) & 1;
+    if (bit) selected.push(accessories[i]);
+  }
+  if (selected.length < 2 && accessories.length > 0) {
+    selected.push(accessories[(seed >> 5) % accessories.length]);
+  }
+
+  return {
+    backgroundHex,
+    primaryHex,
+    secondaryHex,
+    accentHex,
+    silhouette,
+    accessories: selected.slice(0, 4),
+    expression,
+  };
+}
+
 /**
  * Fetch user data by FID from Neynar
  */
@@ -364,11 +557,14 @@ export async function generateCarpletPrompt(user: NeynarUser): Promise<string> {
   const casts = await fetchUserPopularCasts(user.fid, 10);
   const { traits, interests } = extractPersonalityTraits(user, casts);
 
-  // Base Carplet prompt - consistent NFT art style
-  const basePrompt = `A 2D digital illustration of Carplet #${user.fid}, a cute, round yellow-green creature inspired by the Celo blockchain. The character has smooth glossy skin, large expressive eyes, and a small green leaf sprouting from its head. Its body glows softly with eco-energy, featuring minimalist markings — including a stylized Celo-inspired circular logo and a small tech-chip pattern on its chest. `;
+  // Design spec derived from user data
+  const spec = deriveCarpletDesignSpec(user, traits, interests);
+
+  // Base identity description (anchors remain but allow wide variation)
+  const basePrompt = `A 2D digital illustration of Carplet #${user.fid} — a friendly collectible character with a glossy rounded aesthetic, large expressive eyes, and a small green leaf sprouting from its head. Include a subtle Celo-inspired circular motif as a brand anchor.`;
 
   let personalityCustomizations = "";
-  let accessoryElements = [];
+  const accessoryElements: string[] = [];
 
   // Personality-based accessories and modifications while keeping core Carplet design
   if (traits.includes("Influential") || traits.includes("Thought Leader")) {
@@ -476,27 +672,24 @@ export async function generateCarpletPrompt(user: NeynarUser): Promise<string> {
     accessoryElements.push("trending arrows", "energy waves", "dynamic pose");
   }
 
-  // Follower count influence on background and aura
-  if (user.follower_count > 5000) {
-    personalityCustomizations +=
-      "The background has subtle spotlight effects and the Carplet has a commanding, influential aura with golden particles. ";
-    accessoryElements.push(
-      "spotlight background",
-      "golden particles",
-      "influential aura"
-    );
-  } else if (user.follower_count > 1000) {
-    personalityCustomizations +=
-      "The background shows gentle community connection lines and the Carplet has collaborative energy symbols around it. ";
-    accessoryElements.push(
-      "connection lines",
-      "collaborative symbols",
-      "community energy"
-    );
-  }
+  // Remove busy background cues entirely; enforce plain background in DESIGN_SPEC below
 
-  // Final style and composition
-  const styleAndComposition = `The color palette blends warm yellow (#FBCC5C) and vibrant green (#35D07F) with smooth gradient shading. Additional accent colors may include subtle personality-based hues. The background is a deep green gradient with faint glowing particles to evoke sustainability and decentralized technology. ${personalityCustomizations}Rendered in a clean, cartoon-like NFT style, similar to Warplets and Arblets, with balanced lighting, soft shadows, and centered composition. The Carplet should remain recognizable as the core character while showcasing the unique personality traits of ${user.display_name || user.username}.`;
+  // Final style, explicit background and palette directives
+  const designSpecText = `
+DESIGN_SPEC (STRICT):
+- BACKGROUND_COLOR: ${spec.backgroundHex} (plain, solid fill). NO gradients, NO textures, NO patterns, NO particles.
+- CARPLET_COLORS: primary ${spec.primaryHex}, secondary ${spec.secondaryHex}, accent ${spec.accentHex}. Prefer these over default brand colors.
+- SILHOUETTE: ${spec.silhouette} (you may adjust proportions/pose accordingly).
+- EXPRESSION: ${spec.expression}.
+- ACCESSORIES (use 2–4 total, tasteful): ${[...new Set([...accessoryElements, ...spec.accessories])].slice(0, 4).join(", ")}.
 
-  return `${basePrompt}${styleAndComposition}`;
+RENDERING RULES:
+- Maintain identity anchors: leaf sprout and a subtle circular Celo motif.
+- Background must remain a single flat color (${spec.backgroundHex}). Do NOT add shapes or gradients.
+- Keep the character centered with soft shadows and high-quality lighting. No border unless necessary.
+`;
+
+  const styleAndComposition = `${personalityCustomizations} Render in a premium, collectible, cartoon-like NFT style with glossy finish and soft shadows. Emphasize uniqueness from the color palette and silhouette.`;
+
+  return `${basePrompt}\n\n${designSpecText}\n${styleAndComposition}`;
 }
