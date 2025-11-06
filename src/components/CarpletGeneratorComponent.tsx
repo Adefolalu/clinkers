@@ -17,6 +17,11 @@ import { useFarcasterContext } from "../hooks/useFarcasterContext";
 export function CarpletGeneratorComponent() {
   const { address, isConnected } = useAccount();
   const farcasterContext = useFarcasterContext();
+
+  // Development mode - auto-set test FID for local testing
+  const isDevelopment = import.meta.env.MODE === "development";
+  const TEST_FID = 234692; // ayojoseph's FID for testing
+
   // Generation states
   type GenerationStatus =
     | "idle"
@@ -29,7 +34,10 @@ export function CarpletGeneratorComponent() {
 
   const [status, setStatus] = useState<GenerationStatus>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [userFid, setUserFid] = useState<number | null>(null);
+  const [userFid, setUserFid] = useState<number | null>(
+    isDevelopment ? TEST_FID : null
+  );
+  const [regenCounter, setRegenCounter] = useState<number>(0);
   const [neynarUser, setNeynarUser] = useState<NeynarUser | null>(null);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(
     null
@@ -70,8 +78,8 @@ export function CarpletGeneratorComponent() {
   }, [farcasterContext.fid, userFid]);
 
   const handleGenerateCarplet = async () => {
-    if (!isConnected || !address || !userFid) {
-      setError("Please connect your wallet and ensure FID is available");
+    if (!userFid) {
+      setError("Please enter a FID to generate a Carplet");
       return;
     }
 
@@ -94,26 +102,25 @@ export function CarpletGeneratorComponent() {
         return;
       }
 
-      // Verify ownership
-      const isOwner = await verifyFidOwnership(userFid, address);
-      if (!isOwner) {
-        setError(
-          `You don't own FID ${userFid}. Please connect the correct wallet.`
-        );
-        setStatus("error");
-        return;
-      }
-
       setNeynarUser(user);
       setStatus("generating");
 
-      // Generate Carplet prompt based on user personality
-      const personalityPrompt = generateCarpletPrompt(user);
+      // Generate Carplet prompt based on user personality and casts
+      const personalityPrompt = await generateCarpletPrompt(user);
 
-      // Generate image
+      // Increment regeneration counter to vary seed for uniqueness
+      const nextSeedSalt = regenCounter + 1;
+      setRegenCounter(nextSeedSalt);
+
+      // Generate image using user's PFP as reference
       const result = await imageService.generateCarpletImage({
         prompt: personalityPrompt,
         customPrompt: personalityPrompt,
+        seedSalt: nextSeedSalt,
+        pfpUrl: user.pfp_url,
+        username: user.username,
+        fid: user.fid,
+        variationStrength: "balanced",
       });
 
       setGeneratedImageUrl(result.imageUrl);
@@ -126,10 +133,27 @@ export function CarpletGeneratorComponent() {
   };
 
   const handleMintCarplet = async () => {
-    if (!neynarUser || !generatedImageUrl || !userFid || !address) return;
+    if (
+      !neynarUser ||
+      !generatedImageUrl ||
+      !userFid ||
+      !address ||
+      !isConnected
+    )
+      return;
 
     try {
       setStatus("minting");
+
+      // Verify FID ownership before minting
+      const isOwner = await verifyFidOwnership(userFid, address);
+      if (!isOwner) {
+        setError(
+          `You don't own FID ${userFid}. Please connect the wallet that owns this FID to mint.`
+        );
+        setStatus("error");
+        return;
+      }
 
       // Trigger haptic feedback
       try {
@@ -263,24 +287,39 @@ export function CarpletGeneratorComponent() {
       <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-[#1a5f7a]/90 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(37,150,190,0.25)] p-8 border border-[#2596be]/30">
         <div className="text-center">
           <h3 className="text-xl font-bold text-[#2596be] mb-2">
-            FID Required
+            Enter Farcaster ID
           </h3>
           <p className="text-sm text-slate-400 mb-4">
-            We need your Farcaster ID to generate your Carplet
+            Enter any FID to preview their Carplet. You'll need to own the FID
+            to mint it.
           </p>
           <input
             type="number"
-            placeholder="Enter your FID"
+            placeholder="Enter your FID (e.g., 239396)"
             value={userFid || ""}
             onChange={(e) => setUserFid(parseInt(e.target.value) || null)}
             className="w-full px-4 py-3 bg-slate-700/50 border border-[#2596be]/30 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-[#2596be] mb-4"
           />
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setUserFid(239396)}
+              className="flex-1 py-2 bg-slate-600/50 hover:bg-slate-600 text-slate-200 text-sm rounded-lg transition-colors"
+            >
+              Test FID: 239396
+            </button>
+            <button
+              onClick={() => setUserFid(3)}
+              className="flex-1 py-2 bg-slate-600/50 hover:bg-slate-600 text-slate-200 text-sm rounded-lg transition-colors"
+            >
+              Dan (FID: 3)
+            </button>
+          </div>
           <button
             onClick={handleGenerateCarplet}
             disabled={!userFid}
             className="w-full py-3 bg-[#2596be] hover:bg-[#1d7a9f] disabled:opacity-50 text-white font-semibold rounded-xl transition-colors"
           >
-            Continue
+            Continue with FID {userFid}
           </button>
         </div>
       </div>
@@ -320,6 +359,15 @@ export function CarpletGeneratorComponent() {
 
   return (
     <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-[#1a5f7a]/90 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(37,150,190,0.25)] overflow-hidden border border-[#2596be]/30">
+      {/* Development mode indicator */}
+      {isDevelopment && (
+        <div className="bg-yellow-500/20 border-b border-yellow-500/30 px-4 py-2 text-center">
+          <p className="text-yellow-300 text-xs font-medium">
+            🚧 Development Mode - FID {userFid} auto-loaded for testing
+          </p>
+        </div>
+      )}
+
       {/* Top accent */}
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#2596be] to-transparent"></div>
 

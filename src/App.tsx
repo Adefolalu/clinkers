@@ -120,8 +120,8 @@ function CarpletGenerator() {
     );
   }
 
-  // Show error state
-  if (farcasterContext.error) {
+  // Show error state only in mini app mode (browser mode is expected to not have Farcaster context)
+  if (farcasterContext.error && isMiniApp) {
     return (
       <div className="w-full">
         <div className="bg-gradient-to-br from-red-900/80 to-red-800/70 border-2 border-red-500/50 rounded-3xl p-8 text-center shadow-[0_8px_24px_rgba(239,68,68,0.3)]">
@@ -211,12 +211,12 @@ function CarpletGenerator() {
     );
   }
 
-  // If we have both connection and FID, show the Carplet generator
-  if (isConnected && farcasterContext.fid) {
+  // Show Carplet generator if connected (in mini app mode, also need FID)
+  if (isConnected && (farcasterContext.fid || isMiniApp === false)) {
     return <CarpletGeneratorComponent />;
   }
 
-  // If connected but no FID detected
+  // If connected but no FID detected (mini app only)
   return (
     <div className="w-full">
       <div className="bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-[#1a5f7a]/90 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(37,150,190,0.25)] p-8 border border-[#2596be]/30">
