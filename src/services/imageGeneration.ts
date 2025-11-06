@@ -34,6 +34,101 @@ export class ImageGenerationService {
   }
 
   /**
+   * Deterministically derive a style signature (palette, background, silhouette, accessories)
+   * from a user's fid (and optionally username). This yields strong uniqueness across users.
+   */
+  private deriveStyleSignature(fid?: number, username?: string) {
+    const basis = `${fid ?? "anon"}-${username ?? "user"}`;
+    const h = (str: string) =>
+      Array.from(str).reduce((acc, ch, i) => (acc * 33 + ch.charCodeAt(0) + i) >>> 0, 5381);
+
+    const hash = h(basis);
+
+    const silhouettes = [
+      "chonk (short and wide, ultra-cute)",
+      "tall slim (elegant)",
+      "mini chibi (super-deformed)",
+      "dynamic action pose",
+      "techno-cyber variant",
+      "elemental variant (glow/energy)",
+      "mech-armor variant",
+    ];
+
+    const palettes = [
+      { name: "Celo Glow", colors: ["#35D07F", "#0B3D2E", "#C1FFD7"] },
+      { name: "Sunset Pop", colors: ["#FF6B6B", "#FFD93D", "#6BCB77"] },
+      { name: "Neon Night", colors: ["#00F5D4", "#9B5DE5", "#F15BB5"] },
+      { name: "Ocean Calm", colors: ["#1A5F7A", "#56CFE1", "#CAF0F8"] },
+      { name: "Citrus Splash", colors: ["#F7B801", "#F35B04", "#06D6A0"] },
+      { name: "Royal Candy", colors: ["#6A4C93", "#F72585", "#4CC9F0"] },
+      { name: "Forest Dream", colors: ["#0B3D2E", "#35D07F", "#9EF01A"] },
+    ];
+
+    const backgrounds = [
+      "premium gradient with soft volumetric lighting",
+      "abstract geometric shapes with depth-of-field",
+      "neon grid with vaporwave haze",
+      "celestial starscape with subtle bokeh",
+      "nature mist with soft godrays",
+      "liquid glass waves with reflections",
+      "studio softbox lighting on color field",
+    ];
+
+    const patterns = [
+      "subtle circuit traces",
+      "tiny stars and sparkles",
+      "wave ripples",
+      "micro chevrons",
+      "diamond gloss facets",
+      "grain gradient film",
+      "hex micro-tiling",
+    ];
+
+    const accessoryPool = [
+      "sleek visor",
+      "round glasses",
+      "headphones",
+      "chain pendant with Celo ring",
+      "tiny leaf cape",
+      "holo wristband",
+      "mini game controller",
+      "beret and brush",
+      "coffee mug",
+      "sci-fi shoulder pad",
+      "floating drone buddy",
+      "soft scarf",
+      "crown pin",
+      "backpack",
+    ];
+
+    const pick = (arr: any[], idx: number) => arr[idx % arr.length];
+    const pickN = (arr: string[], count: number, seed: number) => {
+      const res: string[] = [];
+      let s = seed;
+      for (let i = 0; i < count; i++) {
+        s = (s * 1664525 + 1013904223) >>> 0;
+        const choice = arr[s % arr.length];
+        if (!res.includes(choice)) res.push(choice);
+      }
+      return res;
+    };
+
+    const silhouette = pick(silhouettes, hash >>> 3);
+    const palette = pick(palettes, hash >>> 5);
+    const background = pick(backgrounds, hash >>> 7);
+    const pattern = pick(patterns, hash >>> 9);
+    const accessories = pickN(accessoryPool, 3 + (hash % 2), hash >>> 11);
+
+    return {
+      silhouette,
+      palette,
+      background,
+      pattern,
+      accessories,
+    };
+  }
+
+  /**
    * Convert image URL to base64 for API usage
    */
   private async imageToBase64(imageUrl: string): Promise<string> {
@@ -75,10 +170,14 @@ export class ImageGenerationService {
 
         const model = "gemini-2.5-flash-image";
 
-        // Get base Carplet image as base64
-        const baseImageBase64 = await this.imageToBase64(
-          window.location.origin + this.baseImageUrl
-        );
+        // Preload base Carplet image as base64 (used for subtle/balanced only)
+        let baseImageBase64: string | null = null;
+        const strength = variationStrength || (pfpUrl ? "balanced" : "bold");
+        if (strength !== "bold") {
+          baseImageBase64 = await this.imageToBase64(
+            window.location.origin + this.baseImageUrl
+          );
+        }
 
         // Compute a deterministic seed from fid (or fall back to time) to increase diversity
         const seedBase = `${typeof fid === "number" ? String(fid) : "anon"}-${seedSalt ?? 0}`;
@@ -90,66 +189,63 @@ export class ImageGenerationService {
           .toString();
 
         // Map variation strength to textual guidance
-        const strength = variationStrength || (pfpUrl ? "balanced" : "bold");
         const strengthGuidance =
           strength === "subtle"
             ? "Apply small, tasteful changes. Keep base silhouette and palette mostly intact."
             : strength === "balanced"
               ? "Apply clear, noticeable personalization. You may adjust proportions, pose, and palette moderately while keeping Carplet identity recognizable."
-              : "Apply bold personalization. You may significantly adjust proportions, pose, and color palette while preserving key brand anchors (leaf sprout, circular Celo motif, glossy rounded aesthetic).";
+              : "Apply BOLD personalization. You may significantly reshape body structure (silhouette), change pose and radically alter color palette and background while preserving minimal brand essence (friendly character energy, collectible polish).";
+
+        // Derive a deterministic style signature for uniqueness
+        const style = this.deriveStyleSignature(fid, username);
+        const paletteText = `${style.palette.colors.join(", ")}`;
+        const accessoriesText = style.accessories.join(", ");
 
         // Create variation prompt based on personality or use custom prompt (we always wrap custom with our remix brief)
         let promptText = customPrompt;
 
         if (!customPrompt) {
-          if (pfpUrl) {
-            // If we have a PFP, create a personalized variation
-            promptText = `Remix the provided base Carplet image into a personalized, UNIQUE NFT for ${username ? username : "this user"}.
+          // Strong uniqueness brief with deterministic style signature
+          const baseLine = pfpUrl
+            ? `Generate a UNIQUE Carplet NFT portrait for ${username ?? "the user"}, inspired by their profile picture (use only for vibe/expression transfer).`
+            : `Generate a UNIQUE Carplet NFT portrait.`;
 
-REMIX BRIEF (Do NOT ignore):
-- Identity anchors to PRESERVE: leaf sprout on head, circular Celo-inspired motif, glossy rounded aesthetic, friendly/contemporary NFT presentation.
-- Variation strength: ${strength.toUpperCase()} — ${strengthGuidance}
-- The artwork MUST be a fresh rendition, not an identical copy.
-- You MAY change pose, proportions, and color palette to reflect personality.
-- Use the profile picture to transfer vibe/expression and 2–4 accessories that fit (glasses, hat, chain, tech gadget, etc.).
-- Integrate subtle motifs from web3/crypto the user resonates with.
-- Background: keep premium NFT look (clean gradient or tasteful abstract), cohesive with the character. Not busy.
+          promptText = `${baseLine}
 
-CONSISTENCY RULES:
-- Maintain the Carplet brand essence (cute creature, eco-energy feel, minimal techno-markings).
-- Keep composition centered and collectible-ready with high-quality lighting and soft shadows.
+STYLE SIGNATURE (deterministic – do not ignore):
+- Silhouette/structure: ${style.silhouette}
+- Color palette (primary → accent): ${paletteText}
+- Background: ${style.background}
+- Surface pattern: ${style.pattern}
+- Accessories (2–4 max from): ${accessoriesText}
 
-UNIQUENESS SEED: ${seedHash}
-`;
-          } else {
-            // If no PFP, create a personality-driven variation (bolder by default)
-            promptText = `Remix the provided base Carplet image into a UNIQUE NFT variant.
+VARIATION: ${strength.toUpperCase()} — ${strengthGuidance}
 
-REMIX BRIEF:
-- Variation strength: ${strength.toUpperCase()} — ${strengthGuidance}
-- You MAY change pose, proportions, and color palette. Preserve anchors: leaf sprout, circular Celo motif, glossy rounded aesthetic.
-- Add 2–3 tasteful personality cues (expression, accessory, subtle patterning).
-- Background: premium NFT look (clean gradient or tasteful abstract), cohesive with the character.
+REQUIREMENTS:
+- The artwork MUST be a fresh, original rendition (not a copy of any base). You MAY radically alter proportions, pose, and composition.
+- Preserve only minimal brand essence: cute collectible creature energy, premium glossy finish, soft global illumination.
+- Composition centered, NFT card-ready, high-quality lighting and soft shadows. No text or UI.
 
 UNIQUENESS SEED: ${seedHash}`;
-          }
         }
 
         // If a high-level personality prompt was provided by upstream (customPrompt), prepend our remix brief to it
         if (customPrompt) {
-          promptText = `${promptText}\n\nPERSONALITY NOTES:\n${customPrompt}`;
+          promptText = `${promptText}\n\nPERSONALITY NOTES (use to tune expression, attitude and motifs):\n${customPrompt}`;
         }
 
         // Prepare content parts - include base image and optional PFP
-        const parts: any[] = [
-          { text: promptText },
-          {
+        const parts: any[] = [{ text: promptText }];
+
+        // In subtle/balanced modes, include the base to keep brand cohesion; in bold, omit base for stronger uniqueness
+        if (baseImageBase64) {
+          parts.push({
             inlineData: {
               mimeType: "image/png",
               data: baseImageBase64,
             },
-          },
-        ];
+          });
+        }
 
         if (pfpUrl) {
           try {
@@ -206,6 +302,13 @@ UNIQUENESS SEED: ${seedHash}`;
               metadata: {
                 model: "gemini-2.5-flash-image",
                 mimeType: inlineData.mimeType,
+                styleSignature: {
+                  silhouette: style.silhouette,
+                  palette: style.palette,
+                  background: style.background,
+                  pattern: style.pattern,
+                  accessories: style.accessories,
+                },
               },
             };
           }

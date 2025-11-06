@@ -120,7 +120,7 @@ export function CarpletGeneratorComponent() {
         pfpUrl: user.pfp_url,
         username: user.username,
         fid: user.fid,
-        variationStrength: "balanced",
+        variationStrength: "bold",
       });
 
       setGeneratedImageUrl(result.imageUrl);
