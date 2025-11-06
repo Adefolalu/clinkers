@@ -28,6 +28,7 @@ export function CarpletGeneratorComponent() {
     | "idle"
     | "verifying"
     | "generating"
+    | "preparing"
     | "ready"
     | "minting"
     | "success"
@@ -215,7 +216,56 @@ export function CarpletGeneratorComponent() {
       });
 
       setGeneratedImageUrl(result.imageUrl);
-      setStatus("ready");
+
+      // Prepare IPFS uploads right after generation
+      try {
+        setStatus("preparing");
+
+        // Upload image to IPFS
+        const imageBlob = await blobFromUrl(result.imageUrl);
+        const imageUri = await uploadImageBlob(
+          imageBlob,
+          `carplet-${userFid}.png`
+        );
+
+        // Create and upload metadata
+        const metadata = {
+          name: `Carplet #${userFid}`,
+          description: `Personalized Farcaster NFT for ${user.display_name || user.username} (FID: ${userFid})`,
+          image: imageUri,
+          attributes: [
+            { trait_type: "FID", value: userFid.toString() },
+            { trait_type: "Username", value: user.username },
+            {
+              trait_type: "Display Name",
+              value: user.display_name || user.username,
+            },
+            {
+              trait_type: "Followers",
+              value: user.follower_count.toString(),
+            },
+            {
+              trait_type: "Following",
+              value: user.following_count.toString(),
+            },
+          ],
+          properties: {
+            fid: userFid,
+            username: user.username,
+            generated_at: new Date().toISOString(),
+          },
+        };
+
+        const metadataUri = await uploadMetadata(metadata);
+
+        // Store prepared data
+        setPreparedMintData({ imageUri, metadataUri });
+        setStatus("ready");
+      } catch (uploadErr: any) {
+        console.error("Failed to prepare mint data:", uploadErr);
+        setError("Failed to prepare mint data. Please try again.");
+        setStatus("error");
+      }
     } catch (err: any) {
       console.error("Carplet generation failed:", err);
       setError(err.message || "Failed to generate Carplet. Please try again.");
@@ -223,28 +273,23 @@ export function CarpletGeneratorComponent() {
     }
   };
 
+  const [preparedMintData, setPreparedMintData] = useState<{
+    imageUri: string;
+    metadataUri: string;
+  } | null>(null);
+
   const handleMintCarplet = async () => {
     if (
-      !neynarUser ||
-      !generatedImageUrl ||
+      !preparedMintData ||
       !userFid ||
       !address ||
-      !isConnected
+      !isConnected ||
+      !walletOwnsFid // Use existing proactive check
     )
       return;
 
     try {
       setStatus("minting");
-
-      // Verify FID ownership before minting
-      const isOwner = await verifyFidOwnership(userFid, address);
-      if (!isOwner) {
-        setError(
-          `You don't own FID ${userFid}. Please connect the wallet that owns this FID to mint.`
-        );
-        setStatus("error");
-        return;
-      }
 
       // Trigger haptic feedback
       try {
@@ -253,42 +298,7 @@ export function CarpletGeneratorComponent() {
         console.debug("Haptic feedback not available:", e);
       }
 
-      // Upload image to IPFS
-      const imageBlob = await blobFromUrl(generatedImageUrl);
-      const imageUri = await uploadImageBlob(
-        imageBlob,
-        `carplet-${userFid}.png`
-      );
-
-      // Create metadata
-      const metadata = {
-        name: `Carplet #${userFid}`,
-        description: `Personalized Farcaster NFT for ${neynarUser.display_name || neynarUser.username} (FID: ${userFid})`,
-        image: imageUri,
-        attributes: [
-          { trait_type: "FID", value: userFid.toString() },
-          { trait_type: "Username", value: neynarUser.username },
-          {
-            trait_type: "Display Name",
-            value: neynarUser.display_name || neynarUser.username,
-          },
-          {
-            trait_type: "Followers",
-            value: neynarUser.follower_count.toString(),
-          },
-          {
-            trait_type: "Following",
-            value: neynarUser.following_count.toString(),
-          },
-        ],
-        properties: {
-          fid: userFid,
-          username: neynarUser.username,
-          generated_at: new Date().toISOString(),
-        },
-      };
-
-      const metadataUri = await uploadMetadata(metadata);
+      const { metadataUri } = preparedMintData;
 
       // Mint Carplet
       const result = await mintCarplet({
@@ -307,7 +317,7 @@ export function CarpletGeneratorComponent() {
       setMintSuccessData({
         hash: result.hash,
         fid: result.fid,
-        imageUri,
+        imageUri: preparedMintData.imageUri,
       });
       setStatus("success");
     } catch (err: any) {
