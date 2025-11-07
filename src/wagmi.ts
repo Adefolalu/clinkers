@@ -1,4 +1,4 @@
-import { farcasterFrame } from "@farcaster/frame-wagmi-connector";
+import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
 import { http, createConfig } from "wagmi";
 import { celo } from "wagmi/chains";
 import { injected, walletConnect, coinbaseWallet } from "@wagmi/connectors";
@@ -39,7 +39,7 @@ export const config = createConfig({
   chains: [celo],
   connectors: [
     injected(), // MetaMask, Rainbow, Coinbase Wallet browser extensions
-    farcasterFrame(), // Farcaster Frame connector
+    farcasterMiniApp(), // Farcaster Frame connector
     walletConnect({ projectId }), // WalletConnect
     coinbaseWallet({ appName: "Carplets" }), // Coinbase Wallet
   ],
