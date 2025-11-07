@@ -169,6 +169,14 @@ export function CarpletGeneratorComponent() {
     };
   }, [userFid, address, isConnected]);
 
+  // Reset everything on retry
+  const resetState = () => {
+    setStatus("idle");
+    setError(null);
+    setPreparedMintData(null);
+    setGeneratedImageUrl(null);
+  };
+
   const handleGenerateCarplet = async () => {
     if (!userFid) {
       setError("Please enter a FID to generate a Carplet");
@@ -176,6 +184,7 @@ export function CarpletGeneratorComponent() {
     }
 
     try {
+      resetState();
       setStatus("verifying");
       setError(null);
 
@@ -205,6 +214,7 @@ export function CarpletGeneratorComponent() {
       setRegenCounter(nextSeedSalt);
 
       // Generate image using user's PFP as reference
+      console.log("[Generation] Starting image generation...");
       const result = await imageService.generateCarpletImage({
         prompt: personalityPrompt,
         customPrompt: personalityPrompt,
@@ -214,21 +224,23 @@ export function CarpletGeneratorComponent() {
         fid: user.fid,
         variationStrength: "bold",
       });
+      console.log("[Generation] Image generated successfully");
 
       setGeneratedImageUrl(result.imageUrl);
 
       // Prepare IPFS uploads right after generation
       try {
         setStatus("preparing");
+        console.log("[IPFS] Starting uploads...");
 
         // Upload image to IPFS
         const imageBlob = await blobFromUrl(result.imageUrl);
+        console.log("[IPFS] Image blob created");
         const imageUri = await uploadImageBlob(
           imageBlob,
           `carplet-${userFid}.png`
         );
-
-        // Create and upload metadata
+        console.log("[IPFS] Image uploaded:", imageUri); // Create and upload metadata
         const metadata = {
           name: `Carplet #${userFid}`,
           description: `Personalized Farcaster NFT for ${user.display_name || user.username} (FID: ${userFid})`,
@@ -473,11 +485,19 @@ export function CarpletGeneratorComponent() {
     <div className="flex flex-col items-center gap-6">
       <div className="relative w-full max-w-sm aspect-square rounded-2xl border border-brand/40 bg-white/5 overflow-hidden">
         {generatedImageUrl ? (
-          <img
-            src={generatedImageUrl}
-            alt="Carplet"
-            className="w-full h-full object-cover"
-          />
+          <>
+            <img
+              src={generatedImageUrl}
+              alt="Carplet"
+              className="w-full h-full object-cover"
+            />
+            {status === "preparing" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-4 bg-black/70 backdrop-blur-sm">
+                <div className="w-12 h-12 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+                <p className="text-sm text-slate-300">Preparing for mint...</p>
+              </div>
+            )}
+          </>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-4">
             <div className="w-12 h-12 rounded-full border-2 border-brand border-t-transparent animate-spin" />
@@ -493,12 +513,24 @@ export function CarpletGeneratorComponent() {
       <div className="w-full max-w-sm space-y-2">
         <button
           onClick={handleMintCarplet}
-          disabled={status !== "ready" || !isConnected || !hasEnoughCelo}
+          disabled={
+            !isConnected ||
+            !hasEnoughCelo ||
+            !preparedMintData ||
+            status === "preparing" ||
+            status === "minting" ||
+            status === "generating" ||
+            status === "verifying"
+          }
           className="w-full py-3 rounded-xl bg-brand text-black font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {isConnected
-            ? `Mint${mintFee ? ` • ${formatEther(mintFee)} CELO` : ""}`
-            : "Connect wallet to mint"}
+          {!isConnected
+            ? "Connect wallet to mint"
+            : status === "preparing"
+              ? "Preparing..."
+              : status === "minting"
+                ? "Minting..."
+                : `Mint${mintFee ? ` • ${formatEther(mintFee)} CELO` : ""}`}
         </button>
         {/* Ownership hint */}
         {isConnected && (
