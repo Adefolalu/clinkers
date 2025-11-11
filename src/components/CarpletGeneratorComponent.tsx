@@ -418,18 +418,24 @@ export function ClinkerGeneratorComponent() {
     }
   }, [status, userFid, generatedImageUrl]);
 
-  // Minimal fallback if no FID (browser-only). Keep structure simple: image placeholder + disabled mint
+  // Minimal fallback if no FID (browser-only)
   if (!userFid) {
     return (
       <div className="flex flex-col items-center gap-6">
-        <div className="w-full aspect-square max-w-sm rounded-2xl border border-brand/40 bg-white/5 flex items-center justify-center">
-          <div className="w-10 h-10 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000" />
+          <div className="relative w-full aspect-square max-w-sm rounded-3xl border border-purple-500/30 bg-gradient-to-br from-slate-900/90 to-purple-900/30 backdrop-blur-xl flex items-center justify-center overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]" />
+            <div className="relative">
+              <div className="w-12 h-12 rounded-full border-2 border-purple-400 border-t-transparent animate-spin" />
+            </div>
+          </div>
         </div>
         <button
           disabled
-          className="w-full max-w-sm py-3 rounded-xl bg-brand text-black font-semibold opacity-60 cursor-not-allowed"
+          className="w-full max-w-sm py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold opacity-40 cursor-not-allowed shadow-xl"
         >
-          Mint
+          Connect Wallet to Mint
         </button>
       </div>
     );
@@ -437,208 +443,311 @@ export function ClinkerGeneratorComponent() {
 
   if (isFidMinted) {
     return (
-      <div className="w-full max-w-sm mx-auto rounded-2xl border border-brand/30 bg-white/5 p-6 text-center space-y-4">
-          <h3 className="text-xl font-bold text-brand font-display">
-          Your Clinker
-        </h3>
-        <div className="relative w-full aspect-square rounded-xl overflow-hidden border border-brand/30 bg-white/5">
-          {mintedImageUrl ? (
-            <img
-              src={mintedImageUrl}
-              alt="Minted Clinker"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+      <div className="w-full max-w-sm mx-auto">
+        {/* Glass card with glow */}
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition duration-500" />
+          <div className="relative rounded-3xl border border-purple-400/30 bg-gradient-to-br from-slate-900/90 to-purple-900/20 backdrop-blur-xl p-6 space-y-5">
+            {/* Header with badge */}
+            <div className="flex items-center justify-between">
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-200 to-blue-200 bg-clip-text text-transparent">
+                Your Clinker
+              </h3>
+              <div className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30">
+                <span className="text-xs font-bold text-emerald-300">✓ MINTED</span>
+              </div>
             </div>
-          )}
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {mintedMetadataUri && (
-            <a
-              href={mintedMetadataUri}
-              target="_blank"
-              rel="noreferrer"
-              className="py-2 rounded-xl bg-brand text-black font-semibold"
+
+            {/* Image with premium frame */}
+            <div className="relative group/img">
+              <div className="absolute -inset-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl blur opacity-20 group-hover/img:opacity-40 transition duration-300" />
+              <div className="relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-purple-400/30 bg-gradient-to-br from-slate-900 to-purple-900/50 shadow-2xl">
+                {mintedImageUrl ? (
+                  <img
+                    src={mintedImageUrl}
+                    alt="Minted Clinker"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full border-2 border-purple-400 border-t-transparent animate-spin" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action buttons - Modern grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {mintedMetadataUri && (
+                <a
+                  href={mintedMetadataUri}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-purple-500/50 hover:scale-105"
+                >
+                  View NFT
+                </a>
+              )}
+              {mintedImageUrl && (
+                <a
+                  href={mintedImageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-purple-400/30 text-purple-200 font-semibold text-sm transition-all duration-200 hover:scale-105"
+                >
+                  Full Image
+                </a>
+              )}
+            </div>
+
+            {/* Share button - Primary CTA */}
+            <button
+              onClick={handleShareMintedView}
+              disabled={!mintedImageUrl}
+              className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shadow-xl hover:shadow-indigo-500/50 hover:scale-[1.02] flex items-center justify-center gap-2"
             >
-              View NFT
-            </a>
-          )}
-          {mintedImageUrl && (
-            <a
-              href={mintedImageUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-brand/30 text-brand font-medium"
-            >
-              Open Image
-            </a>
-          )}
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+              </svg>
+              Share on Farcaster
+            </button>
+          </div>
         </div>
-        <button
-          onClick={handleShareMintedView}
-          disabled={!mintedImageUrl}
-          className="w-full py-2 rounded-xl bg-brand text-black font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          Share on Farcaster
-        </button>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="relative w-full max-w-sm aspect-square rounded-2xl border border-brand/40 bg-white/5 overflow-hidden">
-        {generatedImageUrl ? (
-          <>
-            <img
-              src={generatedImageUrl}
-              alt="Clinker"
-              className="w-full h-full object-cover"
-            />
-            {status === "preparing" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-4 bg-black/70 backdrop-blur-sm">
-                <div className="w-12 h-12 rounded-full border-2 border-brand border-t-transparent animate-spin" />
-                <p className="text-sm text-slate-300">Preparing for mint...</p>
+      {/* Premium image card */}
+      <div className="relative w-full max-w-sm group">
+        <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition duration-700 animate-pulse" />
+        <div className="relative aspect-square rounded-3xl border-2 border-purple-400/30 bg-gradient-to-br from-slate-900/90 to-purple-900/30 backdrop-blur-xl overflow-hidden shadow-2xl">
+          {generatedImageUrl ? (
+            <>
+              <img
+                src={generatedImageUrl}
+                alt="Clinker"
+                className="w-full h-full object-cover"
+              />
+              {status === "preparing" && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center px-6 bg-slate-950/80 backdrop-blur-md">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full border-4 border-purple-500/30 border-t-purple-400 animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-purple-500/20" />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-base font-semibold text-purple-200">Preparing for mint</p>
+                    <p className="text-xs text-slate-400">Uploading to IPFS...</p>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center px-6">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.15),transparent_70%)]" />
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full border-4 border-purple-500/30 border-t-purple-400 animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-purple-500/20 animate-pulse" />
+                </div>
               </div>
-            )}
-          </>
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-4">
-            <div className="w-12 h-12 rounded-full border-2 border-brand border-t-transparent animate-spin" />
-            <p className="text-sm text-slate-300">
-              {status === "verifying"
-                ? "Checking FID..."
-                : "Creating your Clinker..."}
-            </p>
-          </div>
-        )}
+              <div className="space-y-2">
+                <p className="text-base font-semibold text-purple-200">
+                  {status === "verifying" ? "Verifying your identity" : "Generating your Clinker"}
+                </p>
+                <p className="text-xs text-slate-400">
+                  {status === "verifying" ? "Checking FID ownership..." : "AI is creating your unique NFT..."}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="w-full max-w-sm space-y-2">
-        <button
-          onClick={handleMintClinker}
-          disabled={
-            !isConnected ||
-            !hasEnoughEth ||
-            !preparedMintData ||
-            status === "preparing" ||
-            status === "minting" ||
-            status === "generating" ||
-            status === "verifying"
-          }
-          className="w-full py-3 rounded-xl bg-brand text-black font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {!isConnected
-            ? "Connect wallet to mint"
-            : status === "preparing"
-              ? "Preparing..."
-              : status === "minting"
-                ? "Minting..."
-                : `Mint${mintFee ? ` • ${formatEther(mintFee)} ETH` : ""}`}
-        </button>
-        {/* Ownership hint */}
+      <div className="w-full max-w-sm space-y-4">
+        {/* Main mint button */}
+        <div className="relative group/btn">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl blur opacity-40 group-hover/btn:opacity-70 transition duration-300" />
+          <button
+            onClick={handleMintClinker}
+            disabled={
+              !isConnected ||
+              !hasEnoughEth ||
+              !preparedMintData ||
+              status === "preparing" ||
+              status === "minting" ||
+              status === "generating" ||
+              status === "verifying"
+            }
+            className="relative w-full py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold text-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-2xl hover:shadow-purple-500/50 hover:scale-[1.02] disabled:hover:scale-100"
+          >
+            {!isConnected
+              ? "Connect Wallet to Mint"
+              : status === "preparing"
+                ? "⏳ Preparing..."
+                : status === "minting"
+                  ? "🔄 Minting..."
+                  : `✨ Mint${mintFee ? ` • ${formatEther(mintFee)} ETH` : ""}`}
+          </button>
+        </div>
+
+        {/* Status cards */}
         {isConnected && (
-          <p className="mt-2 text-xs text-slate-400 text-center">
-            {walletOwnsFid === null &&
-              "Verifying wallet ownership for this FID..."}
-            {walletOwnsFid === false && (
-              <span className="text-red-300">
-                Connected wallet does not own FID {userFid}. You can still
-                preview, but mint will be blocked.
-              </span>
-            )}
-            {walletOwnsFid === true && (
-              <span className="text-emerald-300">
-                Wallet verified for FID {userFid}.
-              </span>
-            )}
-          </p>
+          <div className="rounded-xl bg-gradient-to-br from-slate-900/50 to-purple-900/20 border border-purple-400/20 backdrop-blur-sm p-4">
+            <div className="flex items-start gap-3">
+              {walletOwnsFid === null ? (
+                <>
+                  <div className="w-5 h-5 rounded-full border-2 border-purple-400 border-t-transparent animate-spin mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-purple-200">Verifying ownership</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Checking FID {userFid}...</p>
+                  </div>
+                </>
+              ) : walletOwnsFid === false ? (
+                <>
+                  <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center mt-0.5">
+                    <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-red-300">Ownership verification failed</p>
+                    <p className="text-xs text-slate-400 mt-0.5">This wallet doesn't own FID {userFid}</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center mt-0.5">
+                    <svg className="w-3 h-3 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-emerald-300">Wallet verified</p>
+                    <p className="text-xs text-slate-400 mt-0.5">You own FID {userFid}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         )}
 
-        {/* Insufficient ETH helper: offer Base swaps to ETH */}
+        {/* Insufficient ETH helper */}
         {isConnected && status !== "minting" && !hasEnoughEth && (
-          <div className="mt-1 text-center text-xs">
-            <p className="mb-2 text-slate-300">
-              Insufficient ETH to cover the mint fee
-              {mintFee ? ` (${formatEther(mintFee)} ETH)` : ""}. Get ETH here:
-            </p>
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                onClick={() => handleSwapForEth(CAIP.BASE_USDC)}
-                className="py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-brand/40 text-brand font-medium transition-colors"
-              >
-                Swap USDC → ETH (Base)
-              </button>
+          <div className="rounded-xl bg-gradient-to-br from-amber-900/30 to-orange-900/20 border border-amber-500/30 backdrop-blur-sm p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center mt-0.5">
+                <svg className="w-3 h-3 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-medium text-amber-300">Insufficient ETH</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Need {mintFee ? formatEther(mintFee) : "0"} ETH to mint
+                </p>
+              </div>
             </div>
+            <button
+              onClick={() => handleSwapForEth(CAIP.BASE_USDC)}
+              className="w-full py-2.5 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-semibold text-sm transition-all duration-200 hover:scale-[1.02]"
+            >
+              Swap USDC → ETH
+            </button>
           </div>
         )}
       </div>
 
       {/* Success Modal */}
       {status === "success" && mintSuccessData && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-surface rounded-3xl shadow-xl max-w-md w-full border border-brand/30 overflow-hidden">
-            <div className="p-6 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-brand/15 rounded-full flex items-center justify-center border-2 border-brand">
-                <svg
-                  className="w-8 h-8 text-brand"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-brand mb-2">
-                Clinker Minted!
-              </h2>
-              <p className="text-sm text-slate-300 mb-4">
-                Clinker #{mintSuccessData.fid.toString()}
-              </p>
-
-              <div className="mb-6 rounded-2xl overflow-hidden border border-brand/30 shadow-lg">
-                <img
-                  src={mintSuccessData.imageUri}
-                  alt="Minted Clinker"
-                  className="w-full h-auto"
-                />
-              </div>
-
-              <div className="bg-white/5 rounded-xl p-3 mb-4 text-xs">
-                <p className="text-slate-400 mb-1">Transaction Hash:</p>
-                <p className="text-brand font-mono break-all">
-                  {mintSuccessData.hash.slice(0, 10)}...
-                  {mintSuccessData.hash.slice(-8)}
-                </p>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-xl flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
+          {/* Success glow backdrop */}
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-blue-500/10" />
+          
+          <div className="relative max-w-md w-full">
+            {/* Outer glow */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-3xl blur-2xl opacity-40 animate-pulse" />
+            
+            {/* Modal content */}
+            <div className="relative bg-gradient-to-br from-slate-900/95 to-purple-900/40 rounded-3xl shadow-2xl border border-purple-400/30 backdrop-blur-2xl overflow-hidden">
+              {/* Success header */}
+              <div className="p-8 text-center border-b border-purple-400/20">
+                <div className="relative w-20 h-20 mx-auto mb-4">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full animate-pulse opacity-30 blur-xl" />
+                  <div className="relative w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center border-2 border-purple-300/50 shadow-xl">
+                    <svg
+                      className="w-10 h-10 text-white animate-in zoom-in duration-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={3}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                </div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-200 via-pink-200 to-blue-200 bg-clip-text text-transparent mb-2">
+                  Clinker Minted!
+                </h2>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/20 border border-purple-400/30">
+                  <span className="text-sm font-medium text-purple-200">Clinker</span>
+                  <span className="text-sm font-bold text-white">#{mintSuccessData.fid.toString()}</span>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <button
-                  onClick={handleShare}
-                  className="w-full py-3 bg-brand text-black font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
+              {/* Image preview */}
+              <div className="p-6">
+                <div className="relative group/img">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl blur opacity-30 group-hover/img:opacity-50 transition duration-300" />
+                  <div className="relative rounded-2xl overflow-hidden border-2 border-purple-400/30 shadow-2xl">
+                    <img
+                      src={mintSuccessData.imageUri}
+                      alt="Minted Clinker"
+                      className="w-full h-auto"
+                    />
+                  </div>
+                </div>
+
+                {/* Transaction hash */}
+                <div className="mt-6 rounded-xl bg-gradient-to-br from-slate-900/50 to-purple-900/20 border border-purple-400/20 backdrop-blur-sm p-4">
+                  <p className="text-xs font-medium text-purple-300 mb-2">Transaction Hash</p>
+                  <p className="text-xs font-mono text-slate-300 break-all">
+                    {mintSuccessData.hash.slice(0, 10)}...{mintSuccessData.hash.slice(-8)}
+                  </p>
+                </div>
+
+                {/* Action buttons */}
+                <div className="mt-6 space-y-3">
+                  <div className="relative group/share">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl blur opacity-40 group-hover/share:opacity-70 transition duration-300" />
+                    <button
+                      onClick={handleShare}
+                      className="relative w-full py-3.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02]"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                      </svg>
+                      Share on Farcaster
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setStatus("idle")}
+                    className="w-full py-3 text-purple-200 bg-white/5 hover:bg-white/10 border border-purple-400/30 font-semibold rounded-xl transition-all duration-200 hover:scale-[1.02]"
                   >
-                    <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
-                  </svg>
-                  Share on Farcaster
-                </button>
-                <button
-                  onClick={() => setStatus("idle")}
-                  className="w-full py-2.5 text-brand bg-white/5 hover:bg-white/10 border border-brand/30 font-medium rounded-xl transition-colors"
-                >
-                  Close
-                </button>
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
           </div>
