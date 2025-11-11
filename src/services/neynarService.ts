@@ -66,6 +66,140 @@ function hslToHex(h: number, s: number, l: number) {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
 }
 
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+  return [h * 360, s * 100, l * 100];
+}
+
+// Extract dominant colors from profile picture
+async function extractPfpColors(pfpUrl: string): Promise<{ primary: string; secondary: string; accent: string } | null> {
+  try {
+    // Create a canvas to analyze the image
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = pfpUrl;
+    });
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    // Scale down for performance
+    const size = 50;
+    canvas.width = size;
+    canvas.height = size;
+    ctx.drawImage(img, 0, 0, size, size);
+
+    const imageData = ctx.getImageData(0, 0, size, size);
+    const pixels = imageData.data;
+
+    // Collect color samples (skip nearly white/black/gray)
+    const colors: Array<[number, number, number]> = [];
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i];
+      const g = pixels[i + 1];
+      const b = pixels[i + 2];
+      const a = pixels[i + 3];
+
+      // Skip transparent, too dark, too light, or too gray
+      if (a < 128) continue;
+      const brightness = (r + g + b) / 3;
+      if (brightness < 30 || brightness > 240) continue;
+      const maxDiff = Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b));
+      if (maxDiff < 15) continue; // Skip grays
+
+      colors.push([r, g, b]);
+    }
+
+    if (colors.length === 0) {
+      console.warn('No vibrant colors found in PFP, using fallback');
+      return null;
+    }
+
+    // K-means clustering to find 3 dominant colors
+    const clusters = 3;
+    let centroids: Array<[number, number, number]> = [];
+    
+    // Initialize centroids randomly
+    for (let i = 0; i < clusters; i++) {
+      centroids.push(colors[Math.floor(Math.random() * colors.length)]);
+    }
+
+    // Run k-means iterations
+    for (let iter = 0; iter < 10; iter++) {
+      const groups: Array<Array<[number, number, number]>> = [[], [], []];
+      
+      // Assign each color to nearest centroid
+      for (const color of colors) {
+        let minDist = Infinity;
+        let bestCluster = 0;
+        for (let c = 0; c < clusters; c++) {
+          const dist = Math.sqrt(
+            Math.pow(color[0] - centroids[c][0], 2) +
+            Math.pow(color[1] - centroids[c][1], 2) +
+            Math.pow(color[2] - centroids[c][2], 2)
+          );
+          if (dist < minDist) {
+            minDist = dist;
+            bestCluster = c;
+          }
+        }
+        groups[bestCluster].push(color);
+      }
+
+      // Recalculate centroids
+      for (let c = 0; c < clusters; c++) {
+        if (groups[c].length > 0) {
+          const avgR = groups[c].reduce((sum, col) => sum + col[0], 0) / groups[c].length;
+          const avgG = groups[c].reduce((sum, col) => sum + col[1], 0) / groups[c].length;
+          const avgB = groups[c].reduce((sum, col) => sum + col[2], 0) / groups[c].length;
+          centroids[c] = [avgR, avgG, avgB];
+        }
+      }
+    }
+
+    // Convert to hex and sort by vibrancy/saturation
+    const colorResults = centroids.map(([r, g, b]) => {
+      const [h, s, l] = rgbToHsl(r, g, b);
+      const hex = `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g).toString(16).padStart(2, '0')}${Math.round(b).toString(16).padStart(2, '0')}`.toUpperCase();
+      return { hex, h, s, l };
+    });
+
+    // Sort by saturation (most vibrant first)
+    colorResults.sort((a, b) => b.s - a.s);
+
+    console.log('🎨 Extracted PFP colors:', colorResults.map(c => c.hex));
+
+    return {
+      primary: colorResults[0].hex,
+      secondary: colorResults[1].hex,
+      accent: colorResults[2].hex,
+    };
+  } catch (error) {
+    console.error('Failed to extract PFP colors:', error);
+    return null;
+  }
+}
+
 // -----------------------------
 // CLINKER PHASE LOGIC
 // -----------------------------
@@ -129,23 +263,63 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
   const seed2 = hashString(`${user.username}-${user.fid}`);
   const seed3 = hashString(`${user.display_name}-${user.follower_count}`);
   
-  // COLOR PALETTE - Each Clinker gets unique colors
-  const baseHue = seed % 360;
-  const hueVariation = (seed2 % 60) - 30; // ±30 degree variation
-  const eyeHue = (baseHue + hueVariation + 360) % 360;
-  const eyeSat = 65 + (seed % 25); // 65-90% saturation
-  const eyeLight = 55 + (seed2 % 20); // 55-75% lightness
-  const eyeColor = hslToHex(eyeHue, eyeSat, eyeLight);
-  
-  const stoneHue = (baseHue + phase * 45 + (seed3 % 40)) % 360;
-  const stoneSat = 50 + ((seed >> 2) % 30); // 50-80%
-  const stoneLight = 45 + ((seed2 >> 2) % 25); // 45-70%
-  const stoneColor = hslToHex(stoneHue, stoneSat, stoneLight);
+  // COLOR PALETTE - Extract from user's PFP
+  let eyeColor: string;
+  let stoneColor: string;
+  let accentColor: string;
 
-  const accentHue = (baseHue + 120 + (seed % 120)) % 360; // Triadic or split-complementary
-  const accentSat = 60 + (seed3 % 30); // 60-90%
-  const accentLight = 50 + ((seed >> 3) % 25); // 50-75%
-  const accentColor = hslToHex(accentHue, accentSat, accentLight);
+  if (user.pfp_url) {
+    const pfpColors = await extractPfpColors(user.pfp_url);
+    
+    if (pfpColors) {
+      // Use extracted colors from PFP
+      eyeColor = pfpColors.primary;
+      stoneColor = pfpColors.secondary;
+      accentColor = pfpColors.accent;
+      
+      console.log('🎨 Using PFP colors:', { eyeColor, stoneColor, accentColor });
+    } else {
+      // Fallback to deterministic generation if extraction fails
+      const baseHue = seed % 360;
+      const hueVariation = (seed2 % 60) - 30;
+      const eyeHue = (baseHue + hueVariation + 360) % 360;
+      const eyeSat = 65 + (seed % 25);
+      const eyeLight = 55 + (seed2 % 20);
+      eyeColor = hslToHex(eyeHue, eyeSat, eyeLight);
+      
+      const stoneHue = (baseHue + phase * 45 + (seed3 % 40)) % 360;
+      const stoneSat = 50 + ((seed >> 2) % 30);
+      const stoneLight = 45 + ((seed2 >> 2) % 25);
+      stoneColor = hslToHex(stoneHue, stoneSat, stoneLight);
+
+      const accentHue = (baseHue + 120 + (seed % 120)) % 360;
+      const accentSat = 60 + (seed3 % 30);
+      const accentLight = 50 + ((seed >> 3) % 25);
+      accentColor = hslToHex(accentHue, accentSat, accentLight);
+      
+      console.log('⚠️ PFP color extraction failed, using fallback colors');
+    }
+  } else {
+    // No PFP, use deterministic generation
+    const baseHue = seed % 360;
+    const hueVariation = (seed2 % 60) - 30;
+    const eyeHue = (baseHue + hueVariation + 360) % 360;
+    const eyeSat = 65 + (seed % 25);
+    const eyeLight = 55 + (seed2 % 20);
+    eyeColor = hslToHex(eyeHue, eyeSat, eyeLight);
+    
+    const stoneHue = (baseHue + phase * 45 + (seed3 % 40)) % 360;
+    const stoneSat = 50 + ((seed >> 2) % 30);
+    const stoneLight = 45 + ((seed2 >> 2) % 25);
+    stoneColor = hslToHex(stoneHue, stoneSat, stoneLight);
+
+    const accentHue = (baseHue + 120 + (seed % 120)) % 360;
+    const accentSat = 60 + (seed3 % 30);
+    const accentLight = 50 + ((seed >> 3) % 25);
+    accentColor = hslToHex(accentHue, accentSat, accentLight);
+    
+    console.log('ℹ️ No PFP URL, using deterministic colors');
+  }
   
   // SURFACE PATTERNS - More variety
   const patterns = [
