@@ -1,15 +1,16 @@
 import { GoogleGenAI } from "@google/genai";
 
 export interface ImageGenerationOptions {
-  prompt: string;
-  personalityTraits?: string[];
-  negativePrompt?: string;
-  customPrompt?: string; // Optional full custom prompt override
+  prompt?: string;
+  neynarScore?: number;
+  accountAgeDays?: number;
+  followersCount?: number;
+  customPrompt?: string;
+  fid?: number;
+  username?: string;
+  seedSalt?: number;
   pfpUrl?: string; // User's profile picture URL to use as reference
-  username?: string; // User's username for context
-  fid?: number; // User's FID for deterministic uniqueness
   variationStrength?: "subtle" | "balanced" | "bold"; // How far to drift from base
-  seedSalt?: number; // Optional salt to produce alternative variants for same fid
 }
 
 export interface ImageGenerationResult {
@@ -17,6 +18,8 @@ export interface ImageGenerationResult {
   service: "gemini";
   metadata?: any;
 }
+
+type ClinkerPhase = "baby" | "youngin" | "risingStar" | "og";
 
 export class ImageGenerationService {
   private geminiAI: GoogleGenAI | null = null;
@@ -26,8 +29,8 @@ export class ImageGenerationService {
 
   constructor() {
     this.apiKey = import.meta.env.VITE_GEMINI_API_KEY || null;
-      this.baseImageUrl = "/original.webp"; // primary base image
-      this.secondaryBaseImageUrl = "/Base2.webp"; // fallback base image
+    this.baseImageUrl = "/original.webp";
+    this.secondaryBaseImageUrl = "/Base2.webp";
     if (this.apiKey) {
       this.geminiAI = new GoogleGenAI({
         apiKey: this.apiKey,
@@ -35,155 +38,46 @@ export class ImageGenerationService {
     }
   }
 
-  // ---------- Color utilities (local) ----------
-  private clamp(n: number, min: number, max: number) {
-    return Math.max(min, Math.min(max, n));
+  // ---------- Determine Clinker Phase ----------
+  private getClinkerPhase(
+    neynarScore?: number,
+    accountAgeDays?: number,
+    followersCount?: number
+  ): ClinkerPhase {
+    const score = (neynarScore ?? 0) + (accountAgeDays ?? 0) * 0.5 + (followersCount ?? 0) * 0.1;
+    if (score < 50) return "baby";
+    if (score < 200) return "youngin";
+    if (score < 600) return "risingStar";
+    return "og";
   }
 
-  private hslToHex(h: number, s: number, l: number) {
-    // Normalize and clamp
-    h = ((h % 360) + 360) % 360;
-    s = this.clamp(s, 0, 100) / 100;
-    l = this.clamp(l, 0, 100) / 100;
-
-    const c = (1 - Math.abs(2 * l - 1)) * s;
-    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    const m = l - c / 2;
-    let r = 0,
-      g = 0,
-      b = 0;
-    if (h < 60) {
-      r = c;
-      g = x;
-      b = 0;
-    } else if (h < 120) {
-      r = x;
-      g = c;
-      b = 0;
-    } else if (h < 180) {
-      r = 0;
-      g = c;
-      b = x;
-    } else if (h < 240) {
-      r = 0;
-      g = x;
-      b = c;
-    } else if (h < 300) {
-      r = x;
-      g = 0;
-      b = c;
-    } else {
-      r = c;
-      g = 0;
-      b = x;
+  // ---------- Phase Color Mapping ----------
+  private phaseColors(phase: ClinkerPhase) {
+    switch (phase) {
+      case "baby":
+        return { glow: "#C8A2FF", eyes: "#E2C2FF", stone: "#EDE6FF" };
+      case "youngin":
+        return { glow: "#A875FF", eyes: "#D19BFF", stone: "#D6C2FF" };
+      case "risingStar":
+        return { glow: "#8A47FF", eyes: "#C174FF", stone: "#BFA6FF" };
+      case "og":
+        return { glow: "#6B00FF", eyes: "#AA2EFF", stone: "#A689FF" };
+      default:
+        return { glow: "#C8A2FF", eyes: "#E2C2FF", stone: "#EDE6FF" };
     }
-    const toHex = (v: number) => {
-      const n = Math.round((v + m) * 255);
-      return n.toString(16).padStart(2, "0");
-    };
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
   }
 
-  /**
-   * Deterministically derive a style signature (palette, background, silhouette, accessories)
-   * from a user's fid (and optionally username). This yields strong uniqueness across users.
-   */
-  private deriveStyleSignature(fid?: number, username?: string) {
-    const basis = `${fid ?? "anon"}-${username ?? "user"}`;
-    const h = (str: string) =>
-      Array.from(str).reduce(
-        (acc, ch, i) => (acc * 33 + ch.charCodeAt(0) + i) >>> 0,
-        5381
-      );
-
-    const hash = h(basis);
-
-    const silhouettes = [
-      "chonk (short and wide, ultra-cute)",
-      "tall slim (elegant)",
-      "mini chibi (super-deformed)",
-      "dynamic action pose",
-      "techno-cyber variant",
-      "elemental variant (glow/energy)",
-      "mech-armor variant",
-    ];
-
-    const palettes = [
-  { name: "Base Glow", colors: ["#2D68FF", "#0E1A3A", "#C3D4FF"] },
-      { name: "Sunset Pop", colors: ["#FF6B6B", "#FFD93D", "#6BCB77"] },
-      { name: "Neon Night", colors: ["#00F5D4", "#9B5DE5", "#F15BB5"] },
-      { name: "Ocean Calm", colors: ["#1A5F7A", "#56CFE1", "#CAF0F8"] },
-      { name: "Citrus Splash", colors: ["#F7B801", "#F35B04", "#06D6A0"] },
-      { name: "Royal Candy", colors: ["#6A4C93", "#F72585", "#4CC9F0"] },
-      { name: "Forest Dream", colors: ["#0B3D2E", "#35D07F", "#9EF01A"] },
-    ];
-
-    // Deterministic plain background color (hex) for solid-fill only (non-white)
-    const hueOffset = 180 + ((hash >>> 7) % 60) - 30; // 150..210 range around complement
-    const bgHue = ((hash % 360) + hueOffset + 360) % 360;
-    const bgSat = 30 + (hash % 25); // 30–54 medium saturation
-    const bgLight = 62 + ((hash >>> 4) % 16); // 62–77 mid/high lightness
-    const backgroundHex = this.hslToHex(bgHue, bgSat, bgLight);
-
-    // Keep a subtle surface pattern descriptor in case it's needed for micro texture on body,
-    // but DO NOT apply to background (background must remain plain solid).
-    const patterns = [
-      "subtle circuit traces",
-      "tiny metallic speckles",
-      "soft micro-dots",
-      "micro chevrons",
-      "diamond gloss facets",
-      "gentle hex tiling",
-    ];
-
-    const accessoryPool = [
-      "sleek visor",
-      "round glasses",
-      "headphones",
-  "chain pendant with Base ring",
-      "tiny leaf cape",
-      "holo wristband",
-      "mini game controller",
-      "beret and brush",
-      "coffee mug",
-      "sci-fi shoulder pad",
-      "floating drone buddy",
-      "soft scarf",
-      "crown pin",
-      "backpack",
-    ];
-
-    const pick = (arr: any[], idx: number) => arr[idx % arr.length];
-    const pickN = (arr: string[], count: number, seed: number) => {
-      const res: string[] = [];
-      let s = seed;
-      for (let i = 0; i < count; i++) {
-        s = (s * 1664525 + 1013904223) >>> 0;
-        const choice = arr[s % arr.length];
-        if (!res.includes(choice)) res.push(choice);
-      }
-      return res;
-    };
-
-    const silhouette = pick(silhouettes, hash >>> 3);
-    const palette = pick(palettes, hash >>> 5);
-    const background = `plain solid color ${backgroundHex}`;
-    const pattern = pick(patterns, hash >>> 9);
-    const accessories = pickN(accessoryPool, 3 + (hash % 2), hash >>> 11);
-
-    return {
-      silhouette,
-      palette,
-      background,
-      backgroundHex,
-      pattern,
-      accessories,
-    };
+  // ---------- Seed Computation ----------
+  private computeSeed(fid?: number, salt?: number): string {
+    const base = `${fid ?? "anon"}-${salt ?? 0}`;
+    const hash = Array.from(base).reduce(
+      (acc, ch, i) => (acc + ch.charCodeAt(0) * (i + 17)) % 1000003,
+      0
+    );
+    return hash.toString();
   }
 
-  /**
-   * Convert image URL to base64 for API usage
-   */
+  // ---------- Convert Image to Base64 ----------
   private async imageToBase64(imageUrl: string): Promise<string> {
     try {
       const response = await fetch(imageUrl);
@@ -203,199 +97,119 @@ export class ImageGenerationService {
     }
   }
 
-  /**
-   * Generate personality-based Carplet image using Gemini's native image generation
-   */
-  async generateCarpletImage(
-    options: ImageGenerationOptions
-  ): Promise<ImageGenerationResult> {
-    const { customPrompt, pfpUrl, username, fid, variationStrength, seedSalt } =
-      options;
-
-    // If we have Gemini API, use it for native image generation
-    if (this.geminiAI) {
-      try {
-        console.log("🎨 Generating personalized Clinker image...");
-
-        const config = {
-          responseModalities: ["IMAGE", "TEXT"],
-        };
-
-        const model = "gemini-2.5-flash-image";
-
-        // Preload base Carplet image as base64 (used for subtle/balanced only)
-        let baseImageBase64: string | null = null;
-        const strength = variationStrength || (pfpUrl ? "balanced" : "bold");
-        if (strength !== "bold") {
-          // Try primary base first, fallback to secondary
-          try {
-            baseImageBase64 = await this.imageToBase64(
-              window.location.origin + this.baseImageUrl
-            );
-          } catch {
-            baseImageBase64 = await this.imageToBase64(
-              window.location.origin + this.secondaryBaseImageUrl
-            );
-          }
-        }
-
-        // Compute a deterministic seed from fid (or fall back to time) to increase diversity
-        const seedBase = `${typeof fid === "number" ? String(fid) : "anon"}-${seedSalt ?? 0}`;
-        const seedHash = Array.from(seedBase)
-          .reduce(
-            (acc, ch, i) => (acc + ch.charCodeAt(0) * (i + 17)) % 1000003,
-            0
-          )
-          .toString();
-
-        // Map variation strength to textual guidance
-        const strengthGuidance =
-          strength === "subtle"
-            ? "Apply small, tasteful changes. Keep base silhouette and palette mostly intact."
-            : strength === "balanced"
-              ? "Apply clear, noticeable personalization. You may adjust proportions, pose, and palette moderately while keeping Clinker identity recognizable."
-              : "Apply BOLD personalization. You may significantly reshape body structure (silhouette), change pose and radically alter color palette and background while preserving minimal brand essence (friendly character energy, collectible polish).";
-
-        // Derive a deterministic style signature for uniqueness
-        const style = this.deriveStyleSignature(fid, username);
-        const paletteText = `${style.palette.colors.join(", ")}`;
-        const accessoriesText = style.accessories.join(", ");
-
-        // Create variation prompt based on personality or use custom prompt (custom prompt is authoritative and may include DESIGN_SPEC)
-        let promptText = customPrompt;
-
-        if (!customPrompt) {
-          // Strong uniqueness brief with deterministic style signature
-          const baseLine = pfpUrl
-              ? `Generate a UNIQUE Clinker NFT portrait for ${username ?? "the user"}, inspired by their profile picture (use only for vibe/expression transfer).`
-              : `Generate a UNIQUE Clinker NFT portrait.`;
-
-          promptText = `${baseLine}
-
-STYLE SIGNATURE (deterministic – do not ignore):
-- Silhouette/structure: ${style.silhouette}
-- Color palette (primary → accent): ${paletteText}
-- Background: PLAIN SOLID ${style.background} (use exactly ${style.backgroundHex}). No gradients, no shapes, no textures, no particles.
-- Surface pattern: ${style.pattern}
-- Accessories (2–4 max from): ${accessoriesText}
-
-VARIATION: ${strength.toUpperCase()} — ${strengthGuidance}
-
-REQUIREMENTS:
-- The artwork MUST be a fresh, original rendition (not a copy of any base). You MAY radically alter proportions, pose, and composition.
-- Preserve only minimal brand essence: cute collectible creature energy, premium glossy finish, soft global illumination.
-- Composition centered, NFT card-ready, high-quality lighting and soft shadows. No text or UI.
-
-UNIQUENESS SEED: ${seedHash}`;
-        }
-
-        // If a high-level personality prompt was provided by upstream, keep it authoritative
-        // and avoid duplicating content. The upstream prompt may contain a DESIGN_SPEC that should be followed strictly.
-        if (customPrompt) {
-          promptText = `${customPrompt}`;
-        }
-
-        // Prepare content parts - include base image and optional PFP
-        const parts: any[] = [{ text: promptText }];
-
-        // In subtle/balanced modes, include the base to keep brand cohesion; in bold, omit base for stronger uniqueness
-        if (baseImageBase64) {
-          parts.push({
-            inlineData: {
-              mimeType: "image/png",
-              data: baseImageBase64,
-            },
-          });
-        }
-
-        if (pfpUrl) {
-          try {
-            // Fetch the profile picture
-            const pfpResponse = await fetch(pfpUrl);
-            if (pfpResponse.ok) {
-              const imageArrayBuffer = await pfpResponse.arrayBuffer();
-              const imageData = new Uint8Array(imageArrayBuffer);
-              const base64Image = btoa(String.fromCharCode(...imageData));
-
-              // Add the image to the request
-              parts.push({
-                inlineData: {
-                  mimeType:
-                    pfpResponse.headers.get("content-type") || "image/jpeg",
-                  data: base64Image,
-                },
-              });
-            }
-          } catch (error) {
-            console.warn("Failed to fetch profile picture:", error);
-            // Continue without the image if fetch fails
-          }
-        }
-
-        const contents = [
-          {
-            role: "user",
-            parts,
-          },
-        ];
-
-        const response = await this.geminiAI.models.generateContentStream({
-          model,
-          config,
-          contents,
-        });
-
-        // Collect the generated image from the stream
-        for await (const chunk of response) {
-          if (!chunk.candidates || !chunk.candidates[0]?.content?.parts) {
-            continue;
-          }
-
-          const inlineData = chunk.candidates[0].content.parts[0].inlineData;
-          if (inlineData?.data && inlineData?.mimeType) {
-            // Convert base64 to data URL
-            const dataUrl = `data:${inlineData.mimeType};base64,${inlineData.data}`;
-
-            console.log("✅ Carplet generation successful!");
-            return {
-              imageUrl: dataUrl,
-              service: "gemini",
-              metadata: {
-                model: "gemini-2.5-flash-image",
-                mimeType: inlineData.mimeType,
-                styleSignature: {
-                  silhouette: style.silhouette,
-                  palette: style.palette,
-                  background: style.background,
-                  backgroundHex: style.backgroundHex,
-                  pattern: style.pattern,
-                  accessories: style.accessories,
-                },
-              },
-            };
-          }
-        }
-
-        throw new Error("No image data in Gemini response");
-      } catch (error) {
-        console.error("❌ Carplet generation failed:", error);
-        throw error;
-      }
-    }
-
-    throw new Error("Gemini API not available");
-  }
-
-  // Backwards-compatible wrapper for Clinker naming
+  // ---------- Core Clinker Generator ----------
   async generateClinkerImage(
     options: ImageGenerationOptions
   ): Promise<ImageGenerationResult> {
-    return this.generateCarpletImage(options);
+    const { customPrompt, fid, neynarScore, accountAgeDays, followersCount, seedSalt, pfpUrl } =
+      options;
+
+    if (!this.geminiAI) throw new Error("Gemini API not available");
+
+    try {
+      console.log("🪨 Generating Clinker evolution...");
+
+      // Determine phase and traits
+      const phase = this.getClinkerPhase(neynarScore, accountAgeDays, followersCount);
+      const { glow, eyes, stone } = this.phaseColors(phase);
+      const seedHash = this.computeSeed(fid, seedSalt);
+
+      // Base image fallback logic
+      let baseImageBase64: string | null = null;
+      try {
+        baseImageBase64 = await this.imageToBase64(
+          window.location.origin + this.baseImageUrl
+        );
+      } catch {
+        baseImageBase64 = await this.imageToBase64(
+          window.location.origin + this.secondaryBaseImageUrl
+        );
+      }
+
+      // ---------- Prompt (preserves design, evolves phase) ----------
+      const prompt = customPrompt
+        ? customPrompt
+        : `This is a Clinker — a rock-like being and collectible from the Forecaster community.
+Keep the exact same design, proportions, and shape from the base image. 
+Do not alter silhouette, facial structure, or core materials.
+
+Phase: ${phase.toUpperCase()}  
+Visual evolution guidelines:
+- Glow color: ${glow}
+- Eyes color: ${eyes}
+- Stone tint: ${stone}
+- Aura brightness and particle count gradually increase with phase.
+- Slight size growth: baby (smallest) → OG (largest, majestic aura).
+- Background lighting reflects energy level, from soft pastel to radiant violet.
+
+STRICT RULES:
+- DO NOT redesign or replace the Clinker.
+- Maintain all features and pose identical to the base.
+- Only evolve aura, color intensity, brightness, and size.
+- Maintain collectible NFT polish, centered framing, high detail and cinematic lighting.
+
+UNIQUENESS SEED: ${seedHash}
+`;
+
+      const parts: any[] = [{ text: prompt }];
+      parts.push({
+        inlineData: {
+          mimeType: "image/webp",
+          data: baseImageBase64,
+        },
+      });
+
+      // Add user's PFP if provided (for visual reference)
+      if (pfpUrl) {
+        try {
+          const pfpResponse = await fetch(pfpUrl);
+          if (pfpResponse.ok) {
+            const imageArrayBuffer = await pfpResponse.arrayBuffer();
+            const imageData = new Uint8Array(imageArrayBuffer);
+            const base64Image = btoa(String.fromCharCode(...imageData));
+            parts.push({
+              inlineData: {
+                mimeType: pfpResponse.headers.get("content-type") || "image/jpeg",
+                data: base64Image,
+              },
+            });
+          }
+        } catch (error) {
+          console.warn("Failed to fetch profile picture:", error);
+        }
+      }
+
+      const response = await this.geminiAI.models.generateContentStream({
+        model: "gemini-2.5-flash-image",
+        contents: [{ role: "user", parts }],
+      });
+
+      for await (const chunk of response) {
+        const inlineData = chunk.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+        if (inlineData?.data && inlineData?.mimeType) {
+          const dataUrl = `data:${inlineData.mimeType};base64,${inlineData.data}`;
+          console.log("✅ Clinker generation successful!");
+          return {
+            imageUrl: dataUrl,
+            service: "gemini",
+            metadata: {
+              phase,
+              colors: { glow, eyes, stone },
+              seedHash,
+              model: "gemini-2.5-flash-image",
+            },
+          };
+        }
+      }
+
+      throw new Error("No image data in Gemini response");
+    } catch (error) {
+      console.error("❌ Clinker generation failed:", error);
+      throw error;
+    }
   }
 
-  /**
-   * Check if Gemini image generation is available
-   */
+  // ---------- Availability Check ----------
   isGeminiAvailable(): boolean {
     return !!this.geminiAI;
   }

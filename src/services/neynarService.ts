@@ -16,6 +16,10 @@ export interface NeynarUser {
   following_count: number;
   custody_address?: string;
   power_badge?: boolean;
+  score?: number; // Neynar user score (0-1)
+  experimental?: {
+    neynar_user_score?: number;
+  };
 }
 
 export interface NeynarUserResponse {
@@ -242,6 +246,47 @@ function deriveCarpletDesignSpec(
 }
 
 /**
+ * Determine user's phase/tier based on Neynar score, follower count, and power badge
+ */
+export function determineUserPhase(user: NeynarUser): {
+  phase: number;
+  phaseName: string;
+  description: string;
+} {
+  // Extract score (prefer stable field, fallback to experimental)
+  const score = user.score ?? user.experimental?.neynar_user_score ?? 0;
+  const followers = user.follower_count;
+  const hasPowerBadge = user.power_badge ?? false;
+
+  // Phase determination logic:
+  // Phase 3 (Elite): Score >= 0.90 OR 5000+ followers OR power badge
+  // Phase 2 (Advanced): Score >= 0.70 OR 1000+ followers
+  // Phase 1 (Standard): Everyone else
+
+  if (score >= 0.90 || followers >= 5000 || hasPowerBadge) {
+    return {
+      phase: 3,
+      phaseName: "Elite",
+      description: "High-influence user with premium access",
+    };
+  }
+
+  if (score >= 0.70 || followers >= 1000) {
+    return {
+      phase: 2,
+      phaseName: "Advanced",
+      description: "Engaged community member with priority access",
+    };
+  }
+
+  return {
+    phase: 1,
+    phaseName: "Standard",
+    description: "Community member with standard access",
+  };
+}
+
+/**
  * Fetch user data by FID from Neynar
  */
 export async function fetchUserByFid(fid: number): Promise<NeynarUser | null> {
@@ -355,330 +400,49 @@ export async function verifyFidOwnership(
 }
 
 /**
- * Get user's personality traits from their Farcaster data and casts
- */
-export function extractPersonalityTraits(
-  user: NeynarUser,
-  casts: NeynarCast[] = []
-): {
-  traits: string[];
-  description: string;
-  interests: string[];
-  activity: string;
-} {
-  const traits: string[] = [];
-  const interests: string[] = [];
-  let description = "";
-  let activity = "";
-
-  // Analyze follower/following ratio for personality insights
-  const ratio =
-    user.following_count > 0
-      ? user.follower_count / user.following_count
-      : user.follower_count;
-
-  if (ratio > 10) {
-    traits.push("Influential");
-    traits.push("Thought Leader");
-  } else if (ratio > 3) {
-    traits.push("Engaging");
-    traits.push("Community Builder");
-  } else if (user.following_count > user.follower_count * 2) {
-    traits.push("Curious");
-    traits.push("Network Expander");
-  }
-
-  // Analyze bio for personality
-  const bio = user.bio?.text?.toLowerCase() || "";
-
-  if (
-    bio.includes("build") ||
-    bio.includes("dev") ||
-    bio.includes("code") ||
-    bio.includes("engineer")
-  ) {
-    traits.push("Builder");
-    traits.push("Technical");
-    interests.push("Development");
-  }
-
-  if (
-    bio.includes("art") ||
-    bio.includes("design") ||
-    bio.includes("creative")
-  ) {
-    traits.push("Creative");
-    traits.push("Artistic");
-    interests.push("Design");
-  }
-
-  if (
-    bio.includes("crypto") ||
-    bio.includes("web3") ||
-    bio.includes("blockchain") ||
-    bio.includes("defi")
-  ) {
-    traits.push("Crypto Native");
-    traits.push("Innovative");
-    interests.push("Blockchain");
-  }
-
-  // Analyze casts content for deeper personality insights
-  const allCastText = casts.map((cast) => cast.text.toLowerCase()).join(" ");
-  let totalEngagement = 0;
-  let avgEngagement = 0;
-
-  if (casts.length > 0) {
-    totalEngagement = casts.reduce(
-      (sum, cast) =>
-        sum +
-        cast.reactions.likes_count +
-        cast.reactions.recasts_count +
-        cast.replies.count,
-      0
-    );
-    avgEngagement = totalEngagement / casts.length;
-
-    // Analyze cast content for interests and traits
-    if (
-      allCastText.includes("build") ||
-      allCastText.includes("launch") ||
-      allCastText.includes("project")
-    ) {
-      traits.push("Project Creator");
-      interests.push("Innovation");
-    }
-
-    if (
-      allCastText.includes("trade") ||
-      allCastText.includes("token") ||
-      allCastText.includes("degen")
-    ) {
-      traits.push("DeFi Trader");
-      interests.push("Trading");
-    }
-
-    if (
-      allCastText.includes("airdrop") ||
-      allCastText.includes("rain") ||
-      allCastText.includes("reward")
-    ) {
-      traits.push("Community Rewader");
-      interests.push("Token Distribution");
-    }
-
-    if (
-      allCastText.includes("art") ||
-      allCastText.includes("nft") ||
-      allCastText.includes("mint")
-    ) {
-      traits.push("NFT Enthusiast");
-      interests.push("Digital Art");
-    }
-
-    if (
-      allCastText.includes("meme") ||
-      allCastText.includes("😂") ||
-      allCastText.includes("lol")
-    ) {
-      traits.push("Humorous");
-      interests.push("Memes");
-    }
-
-    if (
-      allCastText.includes("frame") ||
-      allCastText.includes("miniapp") ||
-      allCastText.includes("bot")
-    ) {
-      traits.push("Frame Developer");
-      interests.push("Farcaster Apps");
-    }
-
-    // Engagement-based traits
-    if (avgEngagement > 100) {
-      traits.push("Viral Creator");
-      activity = "Creates highly engaging content";
-    } else if (avgEngagement > 25) {
-      traits.push("Popular Creator");
-      activity = "Consistent community engagement";
-    } else {
-      traits.push("Authentic Voice");
-      activity = "Quality over quantity content";
-    }
-  }
-
-  // Power badge consideration
-  if (user.power_badge) {
-    traits.push("Power User");
-    traits.push("Farcaster OG");
-  }
-
-  // Activity level based on follower count
-  if (user.follower_count > 5000) {
-    traits.push("Major Influencer");
-  } else if (user.follower_count > 1000) {
-    traits.push("Active Community Member");
-  } else if (user.follower_count > 100) {
-    traits.push("Growing Presence");
-  } else {
-    traits.push("Early Adopter");
-  }
-
-  // Create comprehensive description
-  description = `${user.display_name || user.username} is a Farcaster user with ${user.follower_count} followers and ${user.following_count} following. `;
-
-  if (user.bio?.text) {
-    description += `Bio: "${user.bio.text}". `;
-  }
-
-  if (casts.length > 0) {
-    description += `Recent activity shows ${avgEngagement.toFixed(0)} average engagement per cast. `;
-  }
-
-  if (interests.length > 0) {
-    description += `Primary interests: ${interests.slice(0, 4).join(", ")}. `;
-  }
-
-  if (traits.length > 0) {
-    description += `Key personality traits: ${traits.slice(0, 4).join(", ")}.`;
-  }
-
-  return {
-    traits: [...new Set(traits)].slice(0, 8), // Remove duplicates and limit to 8 traits
-    description,
-    interests: [...new Set(interests)].slice(0, 5), // Remove duplicates and limit to 5 interests
-    activity: activity || "Authentic community participant",
-  };
-}
-
-/**
- * Generate a comprehensive personality-based prompt for Carplet generation
+ * Generate a comprehensive prompt for Clinker generation based on user phase
  */
 export async function generateCarpletPrompt(user: NeynarUser): Promise<string> {
-  // Fetch user's popular casts for better personality analysis
-  const casts = await fetchUserPopularCasts(user.fid, 10);
-  const { traits, interests } = extractPersonalityTraits(user, casts);
+  // Determine user's phase/tier
+  const { phase, phaseName } = determineUserPhase(user);
 
-  // Design spec derived from user data
-  const spec = deriveCarpletDesignSpec(user, traits, interests);
+  // Design spec derived from user data (using empty arrays for traits/interests)
+  const spec = deriveCarpletDesignSpec(user, [], []);
 
-  // Base identity description (anchors remain but allow wide variation)
+  // Base identity description
   const basePrompt = `A 2D digital illustration of Clinker #${user.fid} — a friendly collectible character with a glossy rounded aesthetic, large expressive eyes, and a small green leaf sprouting from its head. Include a subtle Base-inspired portal motif as a brand anchor.`;
 
-  let personalityCustomizations = "";
+  // Phase-based customizations
+  let phaseCustomizations = "";
   const accessoryElements: string[] = [];
 
-  // Personality-based accessories and modifications while keeping core Carplet design
-  if (traits.includes("Influential") || traits.includes("Thought Leader")) {
-    personalityCustomizations +=
-      "The Carplet wears a small golden crown or halo effect around its head. Its eyes have a wise, confident sparkle. ";
-    accessoryElements.push(
-      "golden crown",
-      "wise expression",
-      "leadership aura"
-    );
+  if (phase === 3) {
+    // Elite tier - premium look
+    phaseCustomizations =
+      "The Clinker has a premium golden aura or subtle glow effect, elite badge markings, and a confident, distinguished expression. ";
+    accessoryElements.push("golden aura", "elite badge", "premium glow");
+  } else if (phase === 2) {
+    // Advanced tier - enhanced features
+    phaseCustomizations =
+      "The Clinker has enhanced color vibrancy, special accent patterns, and an engaged, dynamic expression. ";
+    accessoryElements.push("vibrant accents", "special patterns", "dynamic pose");
+  } else {
+    // Standard tier - classic look
+    phaseCustomizations =
+      "The Clinker has a friendly, approachable appearance with classic collectible styling. ";
+    accessoryElements.push("classic style", "friendly expression");
   }
 
-  if (
-    traits.includes("Builder") ||
-    traits.includes("Technical") ||
-    traits.includes("Project Creator")
-  ) {
-    personalityCustomizations +=
-      "The Carplet has small holographic code symbols floating around it, tiny circuit patterns on its cheeks, and wears tiny tech goggles or has a small antenna. ";
-    accessoryElements.push("code symbols", "circuit patterns", "tech goggles");
+  // Add power badge indicator if user has it
+  if (user.power_badge) {
+    phaseCustomizations += "Features a special power user badge or Farcaster OG marking. ";
+    accessoryElements.push("power badge");
   }
 
-  if (
-    traits.includes("Frame Developer") ||
-    interests.includes("Farcaster Apps")
-  ) {
-    personalityCustomizations +=
-      "The Carplet has purple-tinted accents on its body, small frame-like geometric patterns on its surface, and miniature app icons floating nearby. ";
-    accessoryElements.push("purple accents", "geometric frames", "app icons");
-  }
-
-  if (traits.includes("DeFi Trader") || interests.includes("Trading")) {
-    personalityCustomizations +=
-      "The Carplet wears tiny trading glasses, has small chart patterns on its body, and cryptocurrency symbols (₿, Ξ, etc.) floating around it. ";
-    accessoryElements.push(
-      "trading glasses",
-      "chart patterns",
-      "crypto symbols"
-    );
-  }
-
-  if (traits.includes("Creative") || traits.includes("Artistic")) {
-    personalityCustomizations +=
-      "The Carplet has paint splatter patterns on its body in rainbow colors, holds a tiny paintbrush, and has creative sparkles around it. ";
-    accessoryElements.push(
-      "paint splatters",
-      "tiny paintbrush",
-      "creative sparkles"
-    );
-  }
-
-  if (traits.includes("NFT Enthusiast") || interests.includes("Digital Art")) {
-    personalityCustomizations +=
-      "The Carplet has a subtle pixelated border effect, small NFT-style shine particles, and collectible gem patterns on its surface. ";
-    accessoryElements.push(
-      "pixelated effects",
-      "shine particles",
-      "gem patterns"
-    );
-  }
-
-  if (
-    traits.includes("Community Rewader") ||
-    interests.includes("Token Distribution")
-  ) {
-    personalityCustomizations +=
-      "The Carplet has small token symbols raining down around it, community heart symbols on its chest, and a generous, smiling expression. ";
-    accessoryElements.push("token rain", "heart symbols", "generous smile");
-  }
-
-  if (traits.includes("Crypto Native")) {
-    personalityCustomizations +=
-      "The Carplet has blockchain node patterns on its surface, small Web3 symbols, and decentralized network lines connecting around it. ";
-    accessoryElements.push(
-      "blockchain patterns",
-      "web3 symbols",
-      "network lines"
-    );
-  }
-
-  if (traits.includes("Humorous") || interests.includes("Memes")) {
-    personalityCustomizations +=
-      "The Carplet has a playful, mischievous expression with tongue sticking out slightly, meme-style sunglasses, and fun emoji symbols floating around. ";
-    accessoryElements.push(
-      "mischievous expression",
-      "meme sunglasses",
-      "emoji symbols"
-    );
-  }
-
-  if (traits.includes("Power User") || traits.includes("Farcaster OG")) {
-    personalityCustomizations +=
-      "The Carplet wears a special OG badge or veteran patch, has exclusive purple power-user markings, and a confident, experienced expression. ";
-    accessoryElements.push(
-      "OG badge",
-      "power-user markings",
-      "veteran confidence"
-    );
-  }
-
-  // Activity-based modifications
-  if (traits.includes("Viral Creator")) {
-    personalityCustomizations +=
-      "The Carplet has trending arrow symbols around it, viral energy waves, and an excited, dynamic expression. ";
-    accessoryElements.push("trending arrows", "energy waves", "dynamic pose");
-  }
-
-  // Remove busy background cues entirely; enforce plain background in DESIGN_SPEC below
-
-  // Final style, explicit background and palette directives
+  // Final style directives
   const designSpecText = `
 DESIGN_SPEC (STRICT):
+- TIER: ${phaseName} (Phase ${phase})
 - BACKGROUND_COLOR: ${spec.backgroundHex} (plain, solid fill). NO gradients, NO textures, NO patterns, NO particles.
 - CLINKER_COLORS: primary ${spec.primaryHex}, secondary ${spec.secondaryHex}, accent ${spec.accentHex}. Prefer these over default brand colors.
 - SILHOUETTE: ${spec.silhouette} (you may adjust proportions/pose accordingly).
@@ -691,7 +455,7 @@ RENDERING RULES:
 - Keep the character centered with soft shadows and high-quality lighting. No border unless necessary.
 `;
 
-  const styleAndComposition = `${personalityCustomizations} Render in a premium, collectible, cartoon-like NFT style with glossy finish and soft shadows. Emphasize uniqueness from the color palette and silhouette.`;
+  const styleAndComposition = `${phaseCustomizations} Render in a premium, collectible, cartoon-like NFT style with glossy finish and soft shadows. Emphasize uniqueness from the color palette and silhouette.`;
 
   return `${basePrompt}\n\n${designSpecText}\n${styleAndComposition}`;
 }

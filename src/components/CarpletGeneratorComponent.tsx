@@ -40,7 +40,7 @@ export function ClinkerGeneratorComponent() {
     isDevelopment ? TEST_FID : null
   );
   const [regenCounter, setRegenCounter] = useState<number>(0);
-  const [initialLevel, setInitialLevel] = useState<number>(0);
+  const [initialLevel] = useState<number>(0);
   const [neynarUser, setNeynarUser] = useState<NeynarUser | null>(null);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(
     null
