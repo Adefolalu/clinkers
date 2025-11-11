@@ -540,7 +540,6 @@ export function ClinkerGeneratorComponent() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-base font-semibold text-purple-200">Preparing for mint</p>
-                    <p className="text-xs text-slate-400">Uploading to IPFS...</p>
                   </div>
                 </div>
               )}
@@ -556,10 +555,10 @@ export function ClinkerGeneratorComponent() {
               </div>
               <div className="space-y-2">
                 <p className="text-base font-semibold text-purple-200">
-                  {status === "verifying" ? "Verifying your identity" : "Generating your Clinker"}
+                  {status === "verifying" ? "Verifying your identity" : "Creating your Clinker"}
                 </p>
                 <p className="text-xs text-slate-400">
-                  {status === "verifying" ? "Checking FID ownership..." : "AI is creating your unique NFT..."}
+                  {status === "verifying" ? "Checking FID ownership..." : "Creating your unique traits..."}
                 </p>
               </div>
             </div>
