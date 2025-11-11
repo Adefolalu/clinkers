@@ -244,39 +244,35 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
   const auraIndex = (seed2 >> 4) % auraEffects.length;
   const auraStyle = auraEffects[auraIndex];
 
-  const basePrompt = `A digital 2D collectible NFT of Clinker #${user.fid} — a unique stone-like creature with soft round form, expressive eyes, and a subtle Base-themed glow.`;
+  const basePrompt = `A digital 2D collectible NFT of a unique stone-like creature with soft round form, expressive eyes, and a subtle Base-themed glow.`;
 
   // Define phase-based attributes
   let phaseDescription = "";
   if (phase === 1)
-    phaseDescription = "BABY tier: Small, compact form with soft edges and gentle proportions.";
+    phaseDescription = "Small, compact form with soft edges and gentle proportions.";
   else if (phase === 2)
-    phaseDescription = "YOUNGIN tier: Growing form with developing features and youthful energy.";
+    phaseDescription = "Growing form with developing features and youthful energy.";
   else if (phase === 3)
-    phaseDescription = "RISING STAR tier: Mature presence with refined details and confident stance.";
+    phaseDescription = "Mature presence with refined details and confident stance.";
   else
-    phaseDescription = "OG tier: Commanding ancient form with majestic proportions and legendary aura.";
+    phaseDescription = "Commanding ancient form with majestic proportions and legendary aura.";
 
   return `${basePrompt}
 
-PHASE: ${phaseName} (Stage ${phase}/4)
+TIER: ${phaseName}
 ${phaseDescription}
 
-═══════════════════════════════════════════════════════════════
-UNIQUE DNA FOR CLINKER #${user.fid} (${user.username})
-═══════════════════════════════════════════════════════════════
+COLOR PALETTE (Must be prominently visible):
+   • Eye Color: ${eyeColor} with ${eyeShape}
+   • Stone Body: ${stoneColor} with ${surfacePattern}
+   • Accent/Glow: ${accentColor} with ${auraStyle}
 
-🎨 COLOR PALETTE (Must be prominently visible):
-   • Eye Color: ${eyeColor} (${eyeShape})
-   • Stone Body: ${stoneColor} (${surfacePattern})
-   • Accent/Glow: ${accentColor} (${auraStyle})
-
-✨ DISTINCTIVE FEATURES:
+DISTINCTIVE FEATURES:
    • Special Trait: ${uniqueFeature}
-   • Body Variation: ${bodyShape} (within phase proportions)
+   • Body Variation: ${bodyShape}
    • Facial Expression: ${personality}
 
-🔬 RENDERING INSTRUCTIONS:
+RENDERING INSTRUCTIONS:
 1. START with the phase-appropriate base structure from reference image
 2. TRANSFORM the colors to match the unique palette above - this is CRITICAL
 3. APPLY the specified surface texture (${surfacePattern}) to the body
@@ -286,13 +282,13 @@ UNIQUE DNA FOR CLINKER #${user.fid} (${user.username})
 7. ADD glow/aura with (${auraStyle}) using color ${accentColor}
 8. EXPRESS personality through (${personality})
 9. PRESERVE background exactly as shown in base image
-10. Ensure NO TWO Clinkers look identical - emphasize color differences
+10. Ensure colors are vibrant and distinct - emphasize the three-color palette
+11. DO NOT include any text, labels, numbers, or written information on the image
+12. The character should be clean with no text overlays or annotations
 
-⚠️ CRITICAL: The three colors (${eyeColor}, ${stoneColor}, ${accentColor}) MUST dominate the design.
-This Clinker should be instantly recognizable by its unique color combination.
-
-UNIQUENESS SEEDS: [${seed}, ${seed2}, ${seed3}]
-USERNAME: ${user.username} | FOLLOWERS: ${user.follower_count}
+CRITICAL: The three colors (${eyeColor}, ${stoneColor}, ${accentColor}) MUST dominate the design.
+This character should be instantly recognizable by its unique color combination.
+NO TEXT OR LABELS should appear on the final image.
 `;
 }
 
