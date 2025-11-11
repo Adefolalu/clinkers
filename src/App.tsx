@@ -1,7 +1,7 @@
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useEffect, useState } from "react";
 import { useAccount, useConnect } from "wagmi";
-import { CarpletGeneratorComponent } from "./components/CarpletGeneratorComponent";
+import { ClinkerGeneratorComponent } from "./components/CarpletGeneratorComponent";
 import { useFarcasterContext } from "./hooks/useFarcasterContext";
 import AdminPanel from "./components/AdminPanel";
 
@@ -11,17 +11,17 @@ export default function App() {
       <div className="container mx-auto py-10 px-4 max-w-md">
         <header className="text-center mb-8">
           <h1 className="font-display text-3xl md:text-4xl font-semibold text-brand">
-            CARPLET
+            CLINKERS
           </h1>
         </header>
         <AdminPanel />
-        <CarpletGenerator />
+  <ClinkerGenerator />
       </div>
     </div>
   );
 }
 
-function CarpletGenerator() {
+function ClinkerGenerator() {
   const { isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const farcasterContext = useFarcasterContext();
@@ -172,11 +172,11 @@ function CarpletGenerator() {
     // Browser (isMiniApp === false): fall through to show the generator without wallet
   }
 
-  // Show Carplet generator:
+  // Show Clinker generator:
   // - Browser: always
   // - Mini App: only when FID is available
   if (isMiniApp === false || (isMiniApp === true && farcasterContext.fid)) {
-    return <CarpletGeneratorComponent />;
+  return <ClinkerGeneratorComponent />;
   }
 
   // If connected but no FID detected (mini app only)

@@ -2,22 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 import {
   fetchUserByFid,
   verifyFidOwnership,
-  generateCarpletPrompt,
+  generateClinkerPrompt,
   type NeynarUser,
 } from "../services/neynarService";
 import { blobFromUrl, uploadImageBlob, uploadMetadata } from "../services/ipfs";
-import { mintCarplet } from "../services/mintService";
+import { mintClinker } from "../services/mintService";
 import { ImageGenerationService } from "../services/imageGeneration";
 import { useReadContract, useAccount, useBalance } from "wagmi";
 import { formatEther } from "viem";
-import { carplets } from "../constants/Abi";
+import { clinkers } from "../constants/Abi";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useFarcasterContext } from "../hooks/useFarcasterContext";
 
-export function CarpletGeneratorComponent() {
+export function ClinkerGeneratorComponent() {
   const { address, isConnected } = useAccount();
   const farcasterContext = useFarcasterContext();
-  const MINI_APP_URL = "https://the-carplet.vercel.app";
+  const MINI_APP_URL = "https://the-clinkers.vercel.app";
 
   // Development mode - auto-set test FID for local testing
   const isDevelopment = import.meta.env.MODE === "development";
@@ -40,6 +40,7 @@ export function CarpletGeneratorComponent() {
     isDevelopment ? TEST_FID : null
   );
   const [regenCounter, setRegenCounter] = useState<number>(0);
+  const [initialLevel, setInitialLevel] = useState<number>(0);
   const [neynarUser, setNeynarUser] = useState<NeynarUser | null>(null);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(
     null
@@ -73,7 +74,6 @@ export function CarpletGeneratorComponent() {
 
   // CAIP-19 asset IDs for swap helper
   const CAIP = {
-    CELO_NATIVE: "eip155:42220/native",
     BASE_NATIVE: "eip155:8453/native",
     BASE_USDC: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
   } as const;
@@ -82,22 +82,22 @@ export function CarpletGeneratorComponent() {
 
   // Read contract data
   const { data: mintFee } = useReadContract({
-    address: carplets.address as `0x${string}`,
-    abi: carplets.abi,
+    address: clinkers.address as `0x${string}`,
+    abi: clinkers.abi,
     functionName: "mintFee",
   }) as { data: bigint | undefined };
 
   const { data: isFidMinted } = useReadContract({
-    address: carplets.address as `0x${string}`,
-    abi: carplets.abi,
+    address: clinkers.address as `0x${string}`,
+    abi: clinkers.abi,
     functionName: "isFidMinted",
     args: userFid ? [BigInt(userFid)] : undefined,
   }) as { data: boolean | undefined };
 
   // If minted, get tokenURI for this fid (tokenId == fid)
   const { data: tokenUri } = useReadContract({
-    address: carplets.address as `0x${string}`,
-    abi: carplets.abi,
+    address: clinkers.address as `0x${string}`,
+    abi: clinkers.abi,
     functionName: "tokenURI",
     args: userFid ? [BigInt(userFid)] : undefined,
     // @ts-ignore - wagmi query enabling (supported in v1/v2)
@@ -132,14 +132,14 @@ export function CarpletGeneratorComponent() {
     };
   }, [tokenUri, isFidMinted]);
 
-  // Read CELO balance on Celo mainnet for the connected address
-  const { data: celoBalanceData } = useBalance({
+  // Read ETH balance on Base mainnet for the connected address
+  const { data: baseBalanceData } = useBalance({
     address: address as `0x${string}` | undefined,
-    chainId: 42220,
+    chainId: 8453,
   });
-  const celoBalanceWei = celoBalanceData?.value ?? 0n;
+  const baseBalanceWei = baseBalanceData?.value ?? 0n;
   const mintFeeWei = mintFee ?? 0n;
-  const hasEnoughCelo = celoBalanceWei >= mintFeeWei;
+  const hasEnoughEth = baseBalanceWei >= mintFeeWei;
 
   // Initialize with Farcaster context FID
   useEffect(() => {
@@ -177,9 +177,9 @@ export function CarpletGeneratorComponent() {
     setGeneratedImageUrl(null);
   };
 
-  const handleGenerateCarplet = async () => {
+  const handleGenerateClinker = async () => {
     if (!userFid) {
-      setError("Please enter a FID to generate a Carplet");
+      setError("Please enter a FID to generate a Clinker");
       return;
     }
 
@@ -190,7 +190,7 @@ export function CarpletGeneratorComponent() {
 
       // Check if FID is already minted
       if (isFidMinted) {
-        setError(`Carplet for FID ${userFid} has already been minted!`);
+        setError(`Clinker for FID ${userFid} has already been minted!`);
         setStatus("error");
         return;
       }
@@ -206,8 +206,8 @@ export function CarpletGeneratorComponent() {
       setNeynarUser(user);
       setStatus("generating");
 
-      // Generate Carplet prompt based on user personality and casts
-      const personalityPrompt = await generateCarpletPrompt(user);
+  // Generate Clinker prompt based on user personality and casts
+  const personalityPrompt = await generateClinkerPrompt(user);
 
       // Increment regeneration counter to vary seed for uniqueness
       const nextSeedSalt = regenCounter + 1;
@@ -215,7 +215,7 @@ export function CarpletGeneratorComponent() {
 
       // Generate image using user's PFP as reference
       console.log("[Generation] Starting image generation...");
-      const result = await imageService.generateCarpletImage({
+      const result = await imageService.generateClinkerImage({
         prompt: personalityPrompt,
         customPrompt: personalityPrompt,
         seedSalt: nextSeedSalt,
@@ -238,11 +238,11 @@ export function CarpletGeneratorComponent() {
         console.log("[IPFS] Image blob created");
         const imageUri = await uploadImageBlob(
           imageBlob,
-          `carplet-${userFid}.png`
+          `clinker-${userFid}.png`
         );
         console.log("[IPFS] Image uploaded:", imageUri); // Create and upload metadata
         const metadata = {
-          name: `Carplet #${userFid}`,
+          name: `Clinker #${userFid}`,
           description: `Personalized Farcaster NFT for ${user.display_name || user.username} (FID: ${userFid})`,
           image: imageUri,
           attributes: [
@@ -279,8 +279,8 @@ export function CarpletGeneratorComponent() {
         setStatus("error");
       }
     } catch (err: any) {
-      console.error("Carplet generation failed:", err);
-      setError(err.message || "Failed to generate Carplet. Please try again.");
+  console.error("Clinker generation failed:", err);
+  setError(err.message || "Failed to generate Clinker. Please try again.");
       setStatus("error");
     }
   };
@@ -290,7 +290,7 @@ export function CarpletGeneratorComponent() {
     metadataUri: string;
   } | null>(null);
 
-  const handleMintCarplet = async () => {
+  const handleMintClinker = async () => {
     if (
       !preparedMintData ||
       !userFid ||
@@ -312,10 +312,11 @@ export function CarpletGeneratorComponent() {
 
       const { metadataUri } = preparedMintData;
 
-      // Mint Carplet
-      const result = await mintCarplet({
+      // Mint Clinker
+      const result = await mintClinker({
         fid: BigInt(userFid),
         metadataURI: metadataUri,
+        initialLevel,
         feeEth: mintFee ? formatEther(mintFee) : "0",
       });
 
@@ -356,11 +357,11 @@ export function CarpletGeneratorComponent() {
     }
   };
 
-  const handleSwapForCelo = async (sellToken: string) => {
+  const handleSwapForEth = async (sellToken: string) => {
     try {
       await sdk.actions.swapToken({
         sellToken,
-        buyToken: CAIP.CELO_NATIVE,
+        buyToken: CAIP.BASE_NATIVE,
       });
     } catch (e) {
       console.error("Swap action failed:", e);
@@ -374,8 +375,8 @@ export function CarpletGeneratorComponent() {
     if (!mintSuccessData || !neynarUser) return;
 
     try {
-      const miniAppUrl = "https://the-carplet.vercel.app";
-      const text = `Just minted my Carplet #${mintSuccessData.fid}! 🎨\n\nGet your personalized Carplet on Celo`;
+  const miniAppUrl = MINI_APP_URL;
+  const text = `Just minted my Clinker #${mintSuccessData.fid}! 🎨\n\nGet your personalized Clinker on Base`;
 
       await sdk.actions.composeCast({
         text,
@@ -390,7 +391,7 @@ export function CarpletGeneratorComponent() {
   const handleShareMintedView = async () => {
     if (!userFid || !mintedImageUrl) return;
     try {
-      const text = `My Carplet #${userFid} on Celo 🎨\n\nGet yours: ${MINI_APP_URL}`;
+  const text = `My Clinker #${userFid} on Base 🎨\n\nGet yours: ${MINI_APP_URL}`;
       await sdk.actions.composeCast({
         text,
         embeds: [mintedImageUrl],
@@ -408,7 +409,7 @@ export function CarpletGeneratorComponent() {
   // Auto-generate once FID is available and nothing generated yet
   useEffect(() => {
     if (status === "idle" && userFid && !generatedImageUrl) {
-      handleGenerateCarplet();
+  handleGenerateClinker();
     }
   }, [status, userFid, generatedImageUrl]);
 
@@ -432,14 +433,14 @@ export function CarpletGeneratorComponent() {
   if (isFidMinted) {
     return (
       <div className="w-full max-w-sm mx-auto rounded-2xl border border-brand/30 bg-white/5 p-6 text-center space-y-4">
-        <h3 className="text-xl font-bold text-brand font-display">
-          Your Carplet
+          <h3 className="text-xl font-bold text-brand font-display">
+          Your Clinker
         </h3>
         <div className="relative w-full aspect-square rounded-xl overflow-hidden border border-brand/30 bg-white/5">
           {mintedImageUrl ? (
             <img
               src={mintedImageUrl}
-              alt="Minted Carplet"
+              alt="Minted Clinker"
               className="w-full h-full object-cover"
             />
           ) : (
@@ -488,7 +489,7 @@ export function CarpletGeneratorComponent() {
           <>
             <img
               src={generatedImageUrl}
-              alt="Carplet"
+              alt="Clinker"
               className="w-full h-full object-cover"
             />
             {status === "preparing" && (
@@ -504,7 +505,7 @@ export function CarpletGeneratorComponent() {
             <p className="text-sm text-slate-300">
               {status === "verifying"
                 ? "Checking FID..."
-                : "Creating your Carplet..."}
+                : "Creating your Clinker..."}
             </p>
           </div>
         )}
@@ -512,10 +513,10 @@ export function CarpletGeneratorComponent() {
 
       <div className="w-full max-w-sm space-y-2">
         <button
-          onClick={handleMintCarplet}
+          onClick={handleMintClinker}
           disabled={
             !isConnected ||
-            !hasEnoughCelo ||
+            !hasEnoughEth ||
             !preparedMintData ||
             status === "preparing" ||
             status === "minting" ||
@@ -530,7 +531,7 @@ export function CarpletGeneratorComponent() {
               ? "Preparing..."
               : status === "minting"
                 ? "Minting..."
-                : `Mint${mintFee ? ` • ${formatEther(mintFee)} CELO` : ""}`}
+                : `Mint${mintFee ? ` • ${formatEther(mintFee)} ETH` : ""}`}
         </button>
         {/* Ownership hint */}
         {isConnected && (
@@ -551,25 +552,19 @@ export function CarpletGeneratorComponent() {
           </p>
         )}
 
-        {/* Insufficient CELO helper: offer Base ETH or Base USDC swap to CELO */}
-        {isConnected && status !== "minting" && !hasEnoughCelo && (
+        {/* Insufficient ETH helper: offer Base swaps to ETH */}
+        {isConnected && status !== "minting" && !hasEnoughEth && (
           <div className="mt-1 text-center text-xs">
             <p className="mb-2 text-slate-300">
-              Insufficient CELO to cover the mint fee
-              {mintFee ? ` (${formatEther(mintFee)} CELO)` : ""}. Get CELO here:
+              Insufficient ETH to cover the mint fee
+              {mintFee ? ` (${formatEther(mintFee)} ETH)` : ""}. Get ETH here:
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2">
               <button
-                onClick={() => handleSwapForCelo(CAIP.BASE_NATIVE)}
+                onClick={() => handleSwapForEth(CAIP.BASE_USDC)}
                 className="py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-brand/40 text-brand font-medium transition-colors"
               >
-                With ETH (Base)
-              </button>
-              <button
-                onClick={() => handleSwapForCelo(CAIP.BASE_USDC)}
-                className="py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-brand/40 text-brand font-medium transition-colors"
-              >
-                With USDC (Base)
+                Swap USDC → ETH (Base)
               </button>
             </div>
           </div>
@@ -597,16 +592,16 @@ export function CarpletGeneratorComponent() {
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-brand mb-2">
-                Carplet Minted!
+                Clinker Minted!
               </h2>
               <p className="text-sm text-slate-300 mb-4">
-                Carplet #{mintSuccessData.fid.toString()}
+                Clinker #{mintSuccessData.fid.toString()}
               </p>
 
               <div className="mb-6 rounded-2xl overflow-hidden border border-brand/30 shadow-lg">
                 <img
                   src={mintSuccessData.imageUri}
-                  alt="Minted Carplet"
+                  alt="Minted Clinker"
                   className="w-full h-auto"
                 />
               </div>

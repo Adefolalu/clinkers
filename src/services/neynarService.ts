@@ -216,7 +216,7 @@ function deriveCarpletDesignSpec(
     pool.add("OG badge");
   }
   // Ensure some generic options
-  pool.add("Celo pendant");
+  pool.add("Base pendant");
   pool.add("leaf sprout");
 
   // Deterministically pick 2-4 accessories
@@ -563,7 +563,7 @@ export async function generateCarpletPrompt(user: NeynarUser): Promise<string> {
   const spec = deriveCarpletDesignSpec(user, traits, interests);
 
   // Base identity description (anchors remain but allow wide variation)
-  const basePrompt = `A 2D digital illustration of Carplet #${user.fid} — a friendly collectible character with a glossy rounded aesthetic, large expressive eyes, and a small green leaf sprouting from its head. Include a subtle Celo-inspired circular motif as a brand anchor.`;
+  const basePrompt = `A 2D digital illustration of Clinker #${user.fid} — a friendly collectible character with a glossy rounded aesthetic, large expressive eyes, and a small green leaf sprouting from its head. Include a subtle Base-inspired portal motif as a brand anchor.`;
 
   let personalityCustomizations = "";
   const accessoryElements: string[] = [];
@@ -680,13 +680,13 @@ export async function generateCarpletPrompt(user: NeynarUser): Promise<string> {
   const designSpecText = `
 DESIGN_SPEC (STRICT):
 - BACKGROUND_COLOR: ${spec.backgroundHex} (plain, solid fill). NO gradients, NO textures, NO patterns, NO particles.
-- CARPLET_COLORS: primary ${spec.primaryHex}, secondary ${spec.secondaryHex}, accent ${spec.accentHex}. Prefer these over default brand colors.
+- CLINKER_COLORS: primary ${spec.primaryHex}, secondary ${spec.secondaryHex}, accent ${spec.accentHex}. Prefer these over default brand colors.
 - SILHOUETTE: ${spec.silhouette} (you may adjust proportions/pose accordingly).
 - EXPRESSION: ${spec.expression}.
 - ACCESSORIES (use 2–4 total, tasteful): ${[...new Set([...accessoryElements, ...spec.accessories])].slice(0, 4).join(", ")}.
 
 RENDERING RULES:
-- Maintain identity anchors: leaf sprout and a subtle circular Celo motif.
+- Maintain identity anchors: leaf sprout and a subtle circular Base motif.
 - Background must remain a single flat color (${spec.backgroundHex}). Do NOT add shapes or gradients.
 - Keep the character centered with soft shadows and high-quality lighting. No border unless necessary.
 `;
@@ -694,4 +694,11 @@ RENDERING RULES:
   const styleAndComposition = `${personalityCustomizations} Render in a premium, collectible, cartoon-like NFT style with glossy finish and soft shadows. Emphasize uniqueness from the color palette and silhouette.`;
 
   return `${basePrompt}\n\n${designSpecText}\n${styleAndComposition}`;
+}
+
+// Backwards-compatible Clinker aliases
+export type ClinkerDesignSpec = CarpletDesignSpec;
+export const deriveClinkerDesignSpec = deriveCarpletDesignSpec;
+export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
+  return generateCarpletPrompt(user);
 }
