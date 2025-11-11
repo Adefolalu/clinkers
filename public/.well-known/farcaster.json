@@ -1,28 +1,36 @@
 {
   "frame": {
-    "name": "The-Carplet",
+    "name": "clinkers",
     "version": "1",
-    "iconUrl": "https://the-carplet.vercel.app/icon.png",
-    "homeUrl": "https://the-carplet.vercel.app",
-    "imageUrl": "https://the-carplet.vercel.app/splash.png",
-    "buttonTitle": "Mint your Carplet",
-    "splashImageUrl": "https://the-carplet.vercel.app/splash.png",
-    "splashBackgroundColor": "#FCFF52",
-    "webhookUrl": "https://api.neynar.com/f/app/dd72c8df-f5b5-40d7-8bcd-0986f9b239b9/event",
-    "subtitle": "The carplet",
-    "description": "Carplet on celo",
-    "primaryCategory": "social",
-    "screenshotUrls": ["https://the-carplet.vercel.app/splash.png"],
-    "heroImageUrl": "https://the-carplet.vercel.app/splash.png",
-    "tags": ["warplet", "nft", "mutant", "arblet", "celo"],
-    "tagline": "Mint your Carplet",
-    "ogTitle": "Carplet",
-    "ogDescription": "Mint your Carplet"
+    "iconUrl": "https://clinkers.vercel.app/icon.png",
+    "homeUrl": "https://clinkers.vercel.app/",
+    "imageUrl": "https://clinkers.vercel.app/RisingStar.png",
+    "buttonTitle": "Mint your clinker",
+    "splashImageUrl": "https://clinkers.vercel.app/splash.png",
+    "splashBackgroundColor": "#3b82f6",
+    "webhookUrl": "https://api.neynar.com/f/app/a525473f-0313-4a6e-b522-44a5856b3ecf/event",
+    "subtitle": "Create your clanker identity",
+    "description": "Create your clanker identity",
+    "screenshotUrls": [
+      "https://clinkers.vercel.app/RisingStar.png"
+    ],
+    "primaryCategory": "games",
+    "tags": [
+      "nft",
+      "clanker",
+      "clinker",
+      "warplet",
+      "base"
+    ],
+    "heroImageUrl": "https://clinkers.vercel.app/RisingStar.png",
+    "ogTitle": "Clinker- Your clanker identity",
+    "ogDescription": "Clinker- Your clanker identity",
+    "ogImageUrl": "https://clinkers.vercel.app/RisingStar.png"
   },
   "accountAssociation": {
     "header": "eyJmaWQiOjIzOTM5NiwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDRENEU1MjIzODRkNkYxMDkwYkZENEM0NTI3YTdkNTJERmQyMGJDYTMifQ",
-    "payload": "eyJkb21haW4iOiJ0aGUtY2FycGxldC52ZXJjZWwuYXBwIn0",
-    "signature": "pAMBqHC3WAeL0YJuJ0tWaC8SgXQXeOTup0UXzm7El/NLam80abpK3wIx7U9zto4TDXScvKlwQZsf/N88AzRC2Bs="
+    "payload": "eyJkb21haW4iOiJjbGlua2Vycy52ZXJjZWwuYXBwIn0",
+    "signature": "HqiSbjJh2+08Rb1FJ59Mm+pZWQp7SZMaqCxeeFh7xLRuaMh0edTRHOE7pZvXUrf+nzPXsDEBHCq1OI77HV1qtxs="
   },
   
   "baseBuilder": {
