@@ -3,6 +3,7 @@ import {
   fetchUserByFid,
   verifyFidOwnership,
   generateClinkerPrompt,
+  determineClinkerPhase,
   type NeynarUser,
 } from "../services/neynarService";
 import { blobFromUrl, uploadImageBlob, uploadMetadata } from "../services/ipfs";
@@ -206,14 +207,17 @@ export function ClinkerGeneratorComponent() {
       setNeynarUser(user);
       setStatus("generating");
 
-  // Generate Clinker prompt based on user personality and casts
-  const personalityPrompt = await generateClinkerPrompt(user);
+      // Determine user phase
+      const { phase } = determineClinkerPhase(user);
+
+      // Generate Clinker prompt based on user phase
+      const personalityPrompt = await generateClinkerPrompt(user);
 
       // Increment regeneration counter to vary seed for uniqueness
       const nextSeedSalt = regenCounter + 1;
       setRegenCounter(nextSeedSalt);
 
-      // Generate image using user's PFP as reference
+      // Generate image using user's PFP as reference and phase
       console.log("[Generation] Starting image generation...");
       const result = await imageService.generateClinkerImage({
         prompt: personalityPrompt,
@@ -222,6 +226,7 @@ export function ClinkerGeneratorComponent() {
         pfpUrl: user.pfp_url,
         username: user.username,
         fid: user.fid,
+        phase, // Pass the determined phase
         variationStrength: "bold",
       });
       console.log("[Generation] Image generated successfully");

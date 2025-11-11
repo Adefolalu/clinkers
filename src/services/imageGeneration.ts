@@ -11,6 +11,7 @@ export interface ImageGenerationOptions {
   seedSalt?: number;
   pfpUrl?: string; // User's profile picture URL to use as reference
   variationStrength?: "subtle" | "balanced" | "bold"; // How far to drift from base
+  phase?: number; // Clinker phase (1=Baby, 2=Youngin, 3=Rising Star, 4=OG)
 }
 
 export interface ImageGenerationResult {
@@ -24,17 +25,39 @@ type ClinkerPhase = "baby" | "youngin" | "risingStar" | "og";
 export class ImageGenerationService {
   private geminiAI: GoogleGenAI | null = null;
   private apiKey: string | null = null;
-  private readonly baseImageUrl: string;
-  private readonly secondaryBaseImageUrl: string;
+  private readonly phaseBaseImages: Record<number, string> = {
+    1: "/baby.webp",
+    2: "/youngin.png",
+    3: "/RisingStar.png",
+    4: "/og.webp",
+  };
 
   constructor() {
     this.apiKey = import.meta.env.VITE_GEMINI_API_KEY || null;
-    this.baseImageUrl = "/original.webp";
-    this.secondaryBaseImageUrl = "/Base2.webp";
     if (this.apiKey) {
       this.geminiAI = new GoogleGenAI({
         apiKey: this.apiKey,
       });
+    }
+  }
+
+  /**
+   * Get the base image URL for a specific phase
+   */
+  private getPhaseBaseImage(phase: number): string {
+    return this.phaseBaseImages[phase] || this.phaseBaseImages[1];
+  }
+
+  /**
+   * Convert phase number to phase type string
+   */
+  private getPhaseType(phase: number): ClinkerPhase {
+    switch (phase) {
+      case 1: return "baby";
+      case 2: return "youngin";
+      case 3: return "risingStar";
+      case 4: return "og";
+      default: return "baby";
     }
   }
 
@@ -101,7 +124,7 @@ export class ImageGenerationService {
   async generateClinkerImage(
     options: ImageGenerationOptions
   ): Promise<ImageGenerationResult> {
-    const { customPrompt, fid, neynarScore, accountAgeDays, followersCount, seedSalt, pfpUrl } =
+    const { customPrompt, fid, neynarScore, accountAgeDays, followersCount, seedSalt, pfpUrl, phase } =
       options;
 
     if (!this.geminiAI) throw new Error("Gemini API not available");
@@ -109,21 +132,23 @@ export class ImageGenerationService {
     try {
       console.log("🪨 Generating Clinker evolution...");
 
-      // Determine phase and traits
-      const phase = this.getClinkerPhase(neynarScore, accountAgeDays, followersCount);
-      const { glow, eyes, stone } = this.phaseColors(phase);
+      // Use provided phase (number) or determine from metrics
+      const clinkerPhase: number = phase ?? (typeof this.getClinkerPhase(neynarScore, accountAgeDays, followersCount) === 'string' ? 1 : 1);
+      const phaseType = this.getPhaseType(clinkerPhase);
+      const { glow, eyes, stone } = this.phaseColors(phaseType);
       const seedHash = this.computeSeed(fid, seedSalt);
 
-      // Base image fallback logic
+      // Get phase-specific base image
+      const baseImagePath = this.getPhaseBaseImage(clinkerPhase);
       let baseImageBase64: string | null = null;
       try {
         baseImageBase64 = await this.imageToBase64(
-          window.location.origin + this.baseImageUrl
+          window.location.origin + baseImagePath
         );
-      } catch {
-        baseImageBase64 = await this.imageToBase64(
-          window.location.origin + this.secondaryBaseImageUrl
-        );
+        console.log(`📷 Using phase ${clinkerPhase} base image: ${baseImagePath}`);
+      } catch (error) {
+        console.error(`Failed to load base image for phase ${clinkerPhase}:`, error);
+        throw new Error(`Could not load base image: ${baseImagePath}`);
       }
 
       // ---------- Prompt (preserves design, evolves phase) ----------
@@ -133,7 +158,7 @@ export class ImageGenerationService {
 Keep the exact same design, proportions, and shape from the base image. 
 Do not alter silhouette, facial structure, or core materials.
 
-Phase: ${phase.toUpperCase()}  
+Phase: ${phaseType.toUpperCase()} (Stage ${clinkerPhase})
 Visual evolution guidelines:
 - Glow color: ${glow}
 - Eyes color: ${eyes}
@@ -193,9 +218,11 @@ UNIQUENESS SEED: ${seedHash}
             imageUrl: dataUrl,
             service: "gemini",
             metadata: {
-              phase,
+              phase: clinkerPhase,
+              phaseType,
               colors: { glow, eyes, stone },
               seedHash,
+              baseImage: baseImagePath,
               model: "gemini-2.5-flash-image",
             },
           };
