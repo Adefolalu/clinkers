@@ -22,7 +22,7 @@ export const appKit = createAppKit({
   networks: [celo],
   projectId,
   metadata: {
-    name: "$Clinker",
+    name: "Clinker",
     description: "Generate your personalized Farcaster NFT on Celo",
     url: typeof window !== "undefined" ? window.location.origin : "",
     icons: [],
@@ -41,7 +41,7 @@ export const config = createConfig({
     injected(), // MetaMask, Rainbow, Coinbase Wallet browser extensions
     farcasterMiniApp(), // Farcaster Frame connector
     walletConnect({ projectId }), // WalletConnect
-    coinbaseWallet({ appName: "$Clinker" }), // Coinbase Wallet
+    coinbaseWallet({ appName: "Carplets" }), // Coinbase Wallet
   ],
   transports: {
     [celo.id]: http(),
