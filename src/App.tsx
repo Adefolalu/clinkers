@@ -46,9 +46,9 @@ function ClinkerGenerator() {
   // null = detecting, true/false = resolved
   const [isMiniApp, setIsMiniApp] = useState<boolean | null>(null);
 
-  // Check if running in Mini App
+  // Check if running in Mini App and connect immediately
   useEffect(() => {
-    async function checkMiniApp() {
+    async function checkMiniAppAndConnect() {
       let isInMiniApp = false;
       try {
         isInMiniApp = (await sdk.isInMiniApp()) ?? false;
@@ -56,8 +56,24 @@ function ClinkerGenerator() {
         isInMiniApp = false;
       }
       setIsMiniApp(isInMiniApp);
+
+      // Immediately connect if in Mini App
+      if (isInMiniApp && !isConnected && !autoConnecting) {
+        setAutoConnecting(true);
+        const farcasterConnector = connectors.find(
+          (connector) => connector.id === "farcasterMiniApp"
+        );
+        if (farcasterConnector) {
+          try {
+            await connect({ connector: farcasterConnector });
+          } catch (error) {
+            console.error("Auto-connect failed:", error);
+          }
+        }
+        setAutoConnecting(false);
+      }
     }
-    checkMiniApp();
+    checkMiniAppAndConnect();
   }, []);
 
   // Mini app lifecycle hooks: mark ready and suggest adding mini app
@@ -77,43 +93,6 @@ function ClinkerGenerator() {
     }
     onMiniAppReady();
   }, [isMiniApp]);
-
-  // Auto-connect Farcaster wallet if in miniapp
-  useEffect(() => {
-    async function autoConnectFarcaster() {
-      if (isMiniApp === true && !isConnected && !autoConnecting) {
-        setAutoConnecting(true);
-        try {
-          for (let attempt = 0; attempt < 3 && !isConnected; attempt++) {
-            const farcasterConnector = connectors.find(
-              (connector) => connector.id === "farcasterMiniApp"
-            );
-            if (farcasterConnector) {
-              console.log(
-                "Auto-connecting Farcaster wallet in Mini App... (attempt",
-                attempt + 1,
-                ")"
-              );
-              try {
-                await connect({ connector: farcasterConnector });
-                break;
-              } catch (e) {
-                await new Promise((r) => setTimeout(r, 400));
-              }
-            } else {
-              await new Promise((r) => setTimeout(r, 400));
-            }
-          }
-        } catch (error) {
-          console.error("Auto-connect failed:", error);
-        } finally {
-          setAutoConnecting(false);
-        }
-      }
-    }
-
-    autoConnectFarcaster();
-  }, [isMiniApp, isConnected, autoConnecting, connectors, connect]);
 
   // Show loading state
   if (farcasterContext.isLoading) {
