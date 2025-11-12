@@ -41,7 +41,7 @@ export function ClinkerGeneratorComponent() {
     isDevelopment ? TEST_FID : null
   );
   const [regenCounter, setRegenCounter] = useState<number>(0);
-  const [initialLevel] = useState<number>(0);
+  const [userPhase, setUserPhase] = useState<number>(1); // Store determined phase
   const [neynarUser, setNeynarUser] = useState<NeynarUser | null>(null);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(
     null
@@ -209,6 +209,7 @@ export function ClinkerGeneratorComponent() {
 
       // Determine user phase
       const { phase } = determineClinkerPhase(user);
+      setUserPhase(phase); // Store the phase for minting
 
       // Generate Clinker prompt based on user phase
       const personalityPrompt = await generateClinkerPrompt(user);
@@ -317,11 +318,11 @@ export function ClinkerGeneratorComponent() {
 
       const { metadataUri } = preparedMintData;
 
-      // Mint Clinker
+      // Mint Clinker with user's determined phase as the level
       const result = await mintClinker({
         fid: BigInt(userFid),
         metadataURI: metadataUri,
-        initialLevel,
+        initialLevel: userPhase, // Use the determined phase (1-4)
         feeEth: mintFee ? formatEther(mintFee) : "0",
       });
 
