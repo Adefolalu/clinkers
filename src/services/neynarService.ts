@@ -457,7 +457,10 @@ PHASE-SPECIFIC MAGICAL DIAMOND (CRITICAL - Character MUST be holding/generating 
    • Diamond Color: ${diamondColor}
    • Power Level: ${diamondIntensity}
    
-The character should be actively holding or generating this diamond of energy/light in their hands. The diamond represents their magical power and elemental force.
+IMPORTANT: Replace any orbs or spheres in the base image with a proper DIAMOND shape (geometric, faceted, crystalline).
+The diamond must be firmly HELD, GRASPED, or CRADLED in the character's hands - NOT floating, NOT standing alone.
+The character's hands should be wrapped around or supporting the diamond, showing physical contact and connection.
+The diamond represents their magical power and elemental force.
 
 DISTINCTIVE FEATURES:
    • Special Trait: ${uniqueFeature}
@@ -467,19 +470,23 @@ DISTINCTIVE FEATURES:
 RENDERING INSTRUCTIONS:
 1. START with the phase-appropriate base structure from reference image
 2. TRANSFORM the colors to match the unique palette above - this is CRITICAL
-3. RENDER the magical diamond in the character's hands/grasp using the exact ${diamondColor} color specified above
-4. Diamond must match the power level description: ${diamondIntensity}
-5. The diamond should be clearly visible and prominent - it's a key feature showing the character's power tier
-6. APPLY the specified surface texture (${surfacePattern}) to the body
-7. ADD the unique feature (${uniqueFeature}) in a visible but tasteful way
-8. ADJUST body proportions subtly (${bodyShape}) while keeping phase silhouette
-9. RENDER eyes with (${eyeShape}) using color ${eyeColor}
-10. ADD glow/aura with (${auraStyle}) using color ${accentColor}
-11. EXPRESS personality through (${personality})
-12. PRESERVE background exactly as shown in base image
-13. Ensure colors are vibrant and distinct - emphasize the three-color palette
-14. DO NOT include any text, labels, numbers, or written information on the image
-15. The character should be clean with no text overlays or annotations
+3. REPLACE any orbs/spheres in the base image with a DIAMOND (faceted, geometric, crystalline shape)
+4. RENDER the magical diamond using the exact ${diamondColor} color specified above
+5. CRITICAL: Position the diamond IN the character's hands - hands must be holding, grasping, or cradling it
+6. The diamond must have physical contact with the hands - NOT floating separately, NOT standing on its own
+7. Hands should wrap around or support the diamond, showing a firm grip or gentle cradle
+8. Diamond must match the power level description: ${diamondIntensity}
+9. The diamond should be clearly visible and prominent - it's a key feature showing the character's power tier
+10. APPLY the specified surface texture (${surfacePattern}) to the body
+11. ADD the unique feature (${uniqueFeature}) in a visible but tasteful way
+12. ADJUST body proportions subtly (${bodyShape}) while keeping phase silhouette
+13. RENDER eyes with (${eyeShape}) using color ${eyeColor}
+14. ADD glow/aura with (${auraStyle}) using color ${accentColor}
+15. EXPRESS personality through (${personality})
+16. PRESERVE background exactly as shown in base image
+17. Ensure colors are vibrant and distinct - emphasize the three-color palette
+18. DO NOT include any text, labels, numbers, or written information on the image
+19. The character should be clean with no text overlays or annotations
 
 CRITICAL: The three colors (${eyeColor}, ${stoneColor}, ${accentColor}) MUST dominate the design.
 This character should be instantly recognizable by its unique color combination.
