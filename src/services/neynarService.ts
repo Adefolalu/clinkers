@@ -420,16 +420,28 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
 
   const basePrompt = `A digital 2D collectible NFT of a unique stone-like creature with soft round form, expressive eyes, and a subtle Base-themed glow.`;
 
-  // Define phase-based attributes
+  // Define phase-based attributes and diamond specifications
   let phaseDescription = "";
-  if (phase === 1)
+  let diamondColor = "";
+  let diamondIntensity = "";
+  
+  if (phase === 1) {
     phaseDescription = "Small, compact form with soft edges and gentle proportions.";
-  else if (phase === 2)
+    diamondColor = "soft amber-gold";
+    diamondIntensity = "Small glowing diamond with gentle warm glow, subtle sparkle, soft light emission - representing budding magical power";
+  } else if (phase === 2) {
     phaseDescription = "Growing form with developing features and youthful energy.";
-  else if (phase === 3)
+    diamondColor = "vibrant emerald-green";
+    diamondIntensity = "Medium-sized bright diamond with moderate radiance, visible energy waves, growing light beams - representing developing elemental force";
+  } else if (phase === 3) {
     phaseDescription = "Mature presence with refined details and confident stance.";
-  else
+    diamondColor = "brilliant sapphire-blue";
+    diamondIntensity = "Large brilliant diamond with strong prismatic glow, intense light rays, powerful energy aura - representing mastered magical power";
+  } else {
     phaseDescription = "Commanding ancient form with majestic proportions and legendary aura.";
+    diamondColor = "blazing ruby-red with magma essence";
+    diamondIntensity = "MASSIVE legendary diamond with EXPLOSIVE radiance, BLINDING light bursts, lava energy crackling, ethereal power radiating outward - representing ultimate elemental force";
+  }
 
   return `${basePrompt}
 
@@ -441,6 +453,12 @@ COLOR PALETTE (Must be prominently visible):
    • Stone Body: ${stoneColor} with ${surfacePattern}
    • Accent/Glow: ${accentColor} with ${auraStyle}
 
+PHASE-SPECIFIC MAGICAL DIAMOND (CRITICAL - Character MUST be holding/generating this):
+   • Diamond Color: ${diamondColor}
+   • Power Level: ${diamondIntensity}
+   
+The character should be actively holding or generating this diamond of energy/light in their hands. The diamond represents their magical power and elemental force.
+
 DISTINCTIVE FEATURES:
    • Special Trait: ${uniqueFeature}
    • Body Variation: ${bodyShape}
@@ -449,16 +467,19 @@ DISTINCTIVE FEATURES:
 RENDERING INSTRUCTIONS:
 1. START with the phase-appropriate base structure from reference image
 2. TRANSFORM the colors to match the unique palette above - this is CRITICAL
-3. APPLY the specified surface texture (${surfacePattern}) to the body
-4. ADD the unique feature (${uniqueFeature}) in a visible but tasteful way
-5. ADJUST body proportions subtly (${bodyShape}) while keeping phase silhouette
-6. RENDER eyes with (${eyeShape}) using color ${eyeColor}
-7. ADD glow/aura with (${auraStyle}) using color ${accentColor}
-8. EXPRESS personality through (${personality})
-9. PRESERVE background exactly as shown in base image
-10. Ensure colors are vibrant and distinct - emphasize the three-color palette
-11. DO NOT include any text, labels, numbers, or written information on the image
-12. The character should be clean with no text overlays or annotations
+3. RENDER the magical diamond in the character's hands/grasp using the exact ${diamondColor} color specified above
+4. Diamond must match the power level description: ${diamondIntensity}
+5. The diamond should be clearly visible and prominent - it's a key feature showing the character's power tier
+6. APPLY the specified surface texture (${surfacePattern}) to the body
+7. ADD the unique feature (${uniqueFeature}) in a visible but tasteful way
+8. ADJUST body proportions subtly (${bodyShape}) while keeping phase silhouette
+9. RENDER eyes with (${eyeShape}) using color ${eyeColor}
+10. ADD glow/aura with (${auraStyle}) using color ${accentColor}
+11. EXPRESS personality through (${personality})
+12. PRESERVE background exactly as shown in base image
+13. Ensure colors are vibrant and distinct - emphasize the three-color palette
+14. DO NOT include any text, labels, numbers, or written information on the image
+15. The character should be clean with no text overlays or annotations
 
 CRITICAL: The three colors (${eyeColor}, ${stoneColor}, ${accentColor}) MUST dominate the design.
 This character should be instantly recognizable by its unique color combination.
