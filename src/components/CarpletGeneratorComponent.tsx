@@ -18,7 +18,7 @@ import { useFarcasterContext } from "../hooks/useFarcasterContext";
 export function ClinkerGeneratorComponent() {
   const { address, isConnected } = useAccount();
   const farcasterContext = useFarcasterContext();
-  const MINI_APP_URL = "https://the-clinkers.vercel.app";
+  const MINI_APP_URL = "https://clinkers.vercel.app";
 
   // Development mode - auto-set test FID for local testing
   const isDevelopment = import.meta.env.MODE === "development";

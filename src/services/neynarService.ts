@@ -462,6 +462,14 @@ The diamond must be firmly HELD, GRASPED, or CRADLED in the character's hands - 
 The character's hands should be wrapped around or supporting the diamond, showing physical contact and connection.
 The diamond represents their magical power and elemental force.
 
+PERSONALIZED BACKGROUND (Based on user's profile colors):
+   • Primary Background Tone: Desaturated/lighter version of ${stoneColor}
+   • Secondary Accent: Subtle hints of ${accentColor}
+   • Style: Smooth gradient that complements the character without competing
+   
+Replace the base image background with a custom gradient using muted tones of the character's color palette.
+The background should harmonize with ${stoneColor} and ${accentColor} but be subtle and atmospheric.
+
 DISTINCTIVE FEATURES:
    • Special Trait: ${uniqueFeature}
    • Body Variation: ${bodyShape}
@@ -483,10 +491,12 @@ RENDERING INSTRUCTIONS:
 13. RENDER eyes with (${eyeShape}) using color ${eyeColor}
 14. ADD glow/aura with (${auraStyle}) using color ${accentColor}
 15. EXPRESS personality through (${personality})
-16. PRESERVE background exactly as shown in base image
-17. Ensure colors are vibrant and distinct - emphasize the three-color palette
-18. DO NOT include any text, labels, numbers, or written information on the image
-19. The character should be clean with no text overlays or annotations
+16. REPLACE the background with a personalized gradient using desaturated tones of ${stoneColor} and ${accentColor}
+17. Background should be 30-40% lighter/more muted than the character colors for proper contrast
+18. Create a smooth atmospheric gradient that feels cohesive with the character's unique palette
+19. Ensure colors are vibrant and distinct - emphasize the three-color palette
+20. DO NOT include any text, labels, numbers, or written information on the image
+21. The character should be clean with no text overlays or annotations
 
 CRITICAL: The three colors (${eyeColor}, ${stoneColor}, ${accentColor}) MUST dominate the design.
 This character should be instantly recognizable by its unique color combination.
