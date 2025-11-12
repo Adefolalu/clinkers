@@ -285,8 +285,8 @@ export function ClinkerGeneratorComponent() {
         setStatus("error");
       }
     } catch (err: any) {
-  console.error("Clinker generation failed:", err);
-  setError(err.message || "Failed to generate Clinker. Please try again.");
+      console.error("Clinker generation failed:", err);
+      setError(err.message || "Failed to generate Clinker. Please try again.");
       setStatus("error");
     }
   };
@@ -381,8 +381,8 @@ export function ClinkerGeneratorComponent() {
     if (!mintSuccessData || !neynarUser) return;
 
     try {
-  const miniAppUrl = MINI_APP_URL;
-  const text = `Just secured my spot in the Clinker Battle! 🔥💎\n\nClinker #${mintSuccessData.fid} - Ready for war\n\nSecure yours now by @mrfuego.eth 👇`;
+      const miniAppUrl = MINI_APP_URL;
+      const text = `Just secured my spot in the Clinker Battle! by @mrfuego.eth  🔥💎\n\nClinker #${mintSuccessData.fid} - Ready for war\n\nSecure yours now  `;
 
       await sdk.actions.composeCast({
         text,
@@ -397,7 +397,7 @@ export function ClinkerGeneratorComponent() {
   const handleShareMintedView = async () => {
     if (!userFid || !mintedImageUrl) return;
     try {
-  const text = `My Clinker #${userFid} is ready for battle! 🔥💎\n\nSecure yours now by @mrfuego.eth 👇\n\n${MINI_APP_URL}`;
+      const text = `My Clinker #${userFid} is ready for battle! by @mrfuego.eth 🔥💎\n\nSecure yours now 👇\n\n${MINI_APP_URL}`;
       await sdk.actions.composeCast({
         text,
         embeds: [mintedImageUrl],
@@ -415,7 +415,7 @@ export function ClinkerGeneratorComponent() {
   // Auto-generate once FID is available and nothing generated yet
   useEffect(() => {
     if (status === "idle" && userFid && !generatedImageUrl) {
-  handleGenerateClinker();
+      handleGenerateClinker();
     }
   }, [status, userFid, generatedImageUrl]);
 
@@ -455,7 +455,9 @@ export function ClinkerGeneratorComponent() {
                 Your Clinker
               </h3>
               <div className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30">
-                <span className="text-xs font-bold text-emerald-300">✓ MINTED</span>
+                <span className="text-xs font-bold text-emerald-300">
+                  ✓ MINTED
+                </span>
               </div>
             </div>
 
@@ -540,7 +542,9 @@ export function ClinkerGeneratorComponent() {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-base font-semibold text-purple-200">Preparing for mint</p>
+                    <p className="text-base font-semibold text-purple-200">
+                      Preparing for mint
+                    </p>
                   </div>
                 </div>
               )}
@@ -556,10 +560,14 @@ export function ClinkerGeneratorComponent() {
               </div>
               <div className="space-y-2">
                 <p className="text-base font-semibold text-purple-200">
-                  {status === "verifying" ? "Verifying your identity" : "Creating your Clinker"}
+                  {status === "verifying"
+                    ? "Verifying your identity"
+                    : "Creating your Clinker"}
                 </p>
                 <p className="text-xs text-slate-400">
-                  {status === "verifying" ? "Checking FID ownership..." : "Creating your unique traits..."}
+                  {status === "verifying"
+                    ? "Checking FID ownership..."
+                    : "Creating your unique traits..."}
                 </p>
               </div>
             </div>
@@ -602,32 +610,60 @@ export function ClinkerGeneratorComponent() {
                 <>
                   <div className="w-5 h-5 rounded-full border-2 border-purple-400 border-t-transparent animate-spin mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-xs font-medium text-purple-200">Verifying ownership</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Checking FID {userFid}...</p>
+                    <p className="text-xs font-medium text-purple-200">
+                      Verifying ownership
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Checking FID {userFid}...
+                    </p>
                   </div>
                 </>
               ) : walletOwnsFid === false ? (
                 <>
                   <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center mt-0.5">
-                    <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    <svg
+                      className="w-3 h-3 text-red-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-medium text-red-300">Ownership verification failed</p>
-                    <p className="text-xs text-slate-400 mt-0.5">This wallet doesn't own FID {userFid}</p>
+                    <p className="text-xs font-medium text-red-300">
+                      Ownership verification failed
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      This wallet doesn't own FID {userFid}
+                    </p>
                   </div>
                 </>
               ) : (
                 <>
                   <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center mt-0.5">
-                    <svg className="w-3 h-3 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    <svg
+                      className="w-3 h-3 text-emerald-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-medium text-emerald-300">Wallet verified</p>
-                    <p className="text-xs text-slate-400 mt-0.5">You own FID {userFid}</p>
+                    <p className="text-xs font-medium text-emerald-300">
+                      Wallet verified
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      You own FID {userFid}
+                    </p>
                   </div>
                 </>
               )}
@@ -640,12 +676,22 @@ export function ClinkerGeneratorComponent() {
           <div className="rounded-xl bg-gradient-to-br from-amber-900/30 to-orange-900/20 border border-amber-500/30 backdrop-blur-sm p-4 space-y-3">
             <div className="flex items-start gap-3">
               <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center mt-0.5">
-                <svg className="w-3 h-3 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                <svg
+                  className="w-3 h-3 text-amber-400"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
               <div className="flex-1">
-                <p className="text-xs font-medium text-amber-300">Insufficient ETH</p>
+                <p className="text-xs font-medium text-amber-300">
+                  Insufficient ETH
+                </p>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Need {mintFee ? formatEther(mintFee) : "0"} ETH to mint
                 </p>
@@ -666,11 +712,11 @@ export function ClinkerGeneratorComponent() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-xl flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
           {/* Success glow backdrop */}
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-blue-500/10" />
-          
+
           <div className="relative max-w-md w-full">
             {/* Outer glow */}
             <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-3xl blur-2xl opacity-40 animate-pulse" />
-            
+
             {/* Modal content */}
             <div className="relative bg-gradient-to-br from-slate-900/95 to-purple-900/40 rounded-3xl shadow-2xl border border-purple-400/30 backdrop-blur-2xl overflow-hidden">
               {/* Success header */}
@@ -697,8 +743,12 @@ export function ClinkerGeneratorComponent() {
                   Clinker Minted!
                 </h2>
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/20 border border-purple-400/30">
-                  <span className="text-sm font-medium text-purple-200">Clinker</span>
-                  <span className="text-sm font-bold text-white">#{mintSuccessData.fid.toString()}</span>
+                  <span className="text-sm font-medium text-purple-200">
+                    Clinker
+                  </span>
+                  <span className="text-sm font-bold text-white">
+                    #{mintSuccessData.fid.toString()}
+                  </span>
                 </div>
               </div>
 
@@ -717,9 +767,12 @@ export function ClinkerGeneratorComponent() {
 
                 {/* Transaction hash */}
                 <div className="mt-6 rounded-xl bg-gradient-to-br from-slate-900/50 to-purple-900/20 border border-purple-400/20 backdrop-blur-sm p-4">
-                  <p className="text-xs font-medium text-purple-300 mb-2">Transaction Hash</p>
+                  <p className="text-xs font-medium text-purple-300 mb-2">
+                    Transaction Hash
+                  </p>
                   <p className="text-xs font-mono text-slate-300 break-all">
-                    {mintSuccessData.hash.slice(0, 10)}...{mintSuccessData.hash.slice(-8)}
+                    {mintSuccessData.hash.slice(0, 10)}...
+                    {mintSuccessData.hash.slice(-8)}
                   </p>
                 </div>
 

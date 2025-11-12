@@ -22,7 +22,7 @@
 
   "accountAssociation": {
     "header": "eyJmaWQiOjIzOTM5NiwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDRENEU1MjIzODRkNkYxMDkwYkZENEM0NTI3YTdkNTJERmQyMGJDYTMifQ",
-    "payload": "eyJkb21haW4iOiJjbGlua2Vycy52ZXJjZWwuYXBwIn0e",
+    "payload": "eyJkb21haW4iOiJjbGlua2Vycy52ZXJjZWwuYXBwIn0",
     "signature": "HqiSbjJh2+08Rb1FJ59Mm+pZWQp7SZMaqCxeeFh7xLRuaMh0edTRHOE7pZvXUrf+nzPXsDEBHCq1OI77HV1qtxs="
   },
 
