@@ -4,37 +4,29 @@
     "version": "1",
     "iconUrl": "https://clinkers.vercel.app/icon.png",
     "homeUrl": "https://clinkers.vercel.app/",
-    "imageUrl": "https://clinkers.vercel.app/RisingStar.png",
+    "imageUrl": "https://clinkers.vercel.app/splash.jpg",
     "buttonTitle": "Mint your clinker",
-    "splashImageUrl": "https://clinkers.vercel.app/splash.png",
-    "splashBackgroundColor": "#3b82f6",
+    "splashImageUrl": "https://clinkers.vercel.app/splash.jpg",
+    "splashBackgroundColor": "#040813",
     "webhookUrl": "https://api.neynar.com/f/app/a525473f-0313-4a6e-b522-44a5856b3ecf/event",
     "subtitle": "Create your clanker identity",
     "description": "Create your clanker identity",
-    "screenshotUrls": [
-      "https://clinkers.vercel.app/RisingStar.png"
-    ],
+    "screenshotUrls": ["https://clinkers.vercel.app/splash.jpg"],
     "primaryCategory": "games",
-    "tags": [
-      "nft",
-      "clanker",
-      "clinker",
-      "warplet",
-      "base"
-    ],
-    "heroImageUrl": "https://clinkers.vercel.app/RisingStar.png",
+    "tags": ["nft", "clanker", "clinker", "warplet", "base"],
+    "heroImageUrl": "https://clinkers.vercel.app/splash.jpg",
     "ogTitle": "Clinker- Your clanker identity",
     "ogDescription": "Clinker- Your clanker identity",
-    "ogImageUrl": "https://clinkers.vercel.app/RisingStar.png"
+    "ogImageUrl": "https://clinkers.vercel.app/splash.jpg"
   },
+
   "accountAssociation": {
     "header": "eyJmaWQiOjIzOTM5NiwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDRENEU1MjIzODRkNkYxMDkwYkZENEM0NTI3YTdkNTJERmQyMGJDYTMifQ",
-    "payload": "eyJkb21haW4iOiJjbGlua2Vycy52ZXJjZWwuYXBwIn0",
+    "payload": "eyJkb21haW4iOiJjbGlua2Vycy52ZXJjZWwuYXBwIn0e",
     "signature": "HqiSbjJh2+08Rb1FJ59Mm+pZWQp7SZMaqCxeeFh7xLRuaMh0edTRHOE7pZvXUrf+nzPXsDEBHCq1OI77HV1qtxs="
   },
-  
+
   "baseBuilder": {
     "ownerAddress": "0x02a9093dEB73E9E524657492429377117C70e097"
   }
-
 }
