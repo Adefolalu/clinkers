@@ -382,7 +382,7 @@ export function ClinkerGeneratorComponent() {
 
     try {
       const miniAppUrl = MINI_APP_URL;
-      const text = `Just secured my spot in the Clinker Battle! by @mrfuego.eth  🔥💎\n\nClinker #${mintSuccessData.fid} - Ready for war\n\nSecure yours now  `;
+      const text = `Just forged my $Clinkers #${mintSuccessData.fid}! 🔥💎\n\nReady to battle?\n\n@mrfuego.eth has the portal 👇`;
 
       await sdk.actions.composeCast({
         text,
@@ -397,7 +397,7 @@ export function ClinkerGeneratorComponent() {
   const handleShareMintedView = async () => {
     if (!userFid || !mintedImageUrl) return;
     try {
-      const text = `My Clinker #${userFid} is ready for battle! by @mrfuego.eth 🔥💎\n\nSecure yours now 👇\n\n${MINI_APP_URL}`;
+      const text = `My $Clinkers #${userFid} is forged. 🔥💎\n\nReady to battle?\n\n@mrfuego.eth can summon yours 👇\n\n${MINI_APP_URL}`;
       await sdk.actions.composeCast({
         text,
         embeds: [mintedImageUrl],
