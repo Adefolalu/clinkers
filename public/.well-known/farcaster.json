@@ -6,8 +6,8 @@
   },
 
   "frame": {
-    "name": "clinkers",
     "version": "1",
+    "name": "clinkers",
     "iconUrl": "https://clinkers.vercel.app/icon.png",
     "homeUrl": "https://clinkers.vercel.app/",
     "imageUrl": "https://clinkers.vercel.app/splash.jpg",
