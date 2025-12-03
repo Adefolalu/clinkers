@@ -1,5 +1,5 @@
 export const clinkersContractAddress =
-	"0x6bF58D257da8dddd8Fd74c62c5b201171Eb71daD"; // Deployed on Base mainnet
+	"0x59df628ab3478e0A1E221c327BF6e08BD5D57B23"; // Deployed on Base mainnet
 
 export const clinkersabi = [
 	{
