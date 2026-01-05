@@ -319,10 +319,11 @@ export function ClinkerGeneratorComponent() {
       const { metadataUri } = preparedMintData;
 
       // Mint Clinker with user's determined phase as the level
+      // Contract expects 0-3 (baby, youngins, rising, OGs), frontend uses 1-4, so subtract 1
       const result = await mintClinker({
         fid: BigInt(userFid),
         metadataURI: metadataUri,
-        initialLevel: userPhase, // Use the determined phase (1-4)
+        initialLevel: userPhase - 1, // Convert frontend phase (1-4) to contract level (0-3)
         feeEth: mintFee ? formatEther(mintFee) : "0",
       });
 

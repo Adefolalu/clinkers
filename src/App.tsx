@@ -4,6 +4,7 @@ import { useAccount, useConnect } from "wagmi";
 import { ClinkerGeneratorComponent } from "./components/CarpletGeneratorComponent";
 import { useFarcasterContext } from "./hooks/useFarcasterContext";
 import AdminPanel from "./components/AdminPanel";
+import { RecentMints } from "./components/RecentMints";
 
 export default function App() {
   return (
@@ -11,7 +12,7 @@ export default function App() {
       {/* Ambient background effects */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-600/20 via-transparent to-transparent" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-blue-600/20 via-transparent to-transparent" />
-      
+
       {/* Animated mesh gradient overlay */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" />
@@ -23,14 +24,21 @@ export default function App() {
         <header className="text-center mb-10">
           <div className="inline-block mb-3">
             <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-400/30 backdrop-blur-sm">
-              <span className="text-xs font-medium text-purple-200">✨ clinker x clanker ✨</span>
+              <span className="text-xs font-medium text-purple-200">
+                ✨ clinker x clanker ✨
+              </span>
             </div>
           </div>
           <h1 className="font-display text-5xl md:text-6xl font-bold bg-gradient-to-r from-purple-200 via-blue-200 to-indigo-200 bg-clip-text text-transparent mb-2">
             CLINKERS
           </h1>
-          <p className="text-sm text-slate-400 font-medium">Your clanker Identity</p>
+          <p className="text-sm text-slate-400 font-medium">
+            Your clanker Identity
+          </p>
         </header>
+
+        <RecentMints />
+
         <AdminPanel />
         <ClinkerGenerator />
       </div>
@@ -172,7 +180,7 @@ function ClinkerGenerator() {
   // - Browser: always
   // - Mini App: only when FID is available
   if (isMiniApp === false || (isMiniApp === true && farcasterContext.fid)) {
-  return <ClinkerGeneratorComponent />;
+    return <ClinkerGeneratorComponent />;
   }
 
   // If connected but no FID detected (mini app only)

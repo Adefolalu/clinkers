@@ -53,11 +53,16 @@ export class ImageGenerationService {
    */
   private getPhaseType(phase: number): ClinkerPhase {
     switch (phase) {
-      case 1: return "baby";
-      case 2: return "youngin";
-      case 3: return "risingStar";
-      case 4: return "og";
-      default: return "baby";
+      case 1:
+        return "baby";
+      case 2:
+        return "youngin";
+      case 3:
+        return "risingStar";
+      case 4:
+        return "og";
+      default:
+        return "baby";
     }
   }
 
@@ -67,7 +72,10 @@ export class ImageGenerationService {
     accountAgeDays?: number,
     followersCount?: number
   ): ClinkerPhase {
-    const score = (neynarScore ?? 0) + (accountAgeDays ?? 0) * 0.5 + (followersCount ?? 0) * 0.1;
+    const score =
+      (neynarScore ?? 0) +
+      (accountAgeDays ?? 0) * 0.5 +
+      (followersCount ?? 0) * 0.1;
     if (score < 50) return "baby";
     if (score < 200) return "youngin";
     if (score < 600) return "risingStar";
@@ -124,8 +132,16 @@ export class ImageGenerationService {
   async generateClinkerImage(
     options: ImageGenerationOptions
   ): Promise<ImageGenerationResult> {
-    const { customPrompt, fid, neynarScore, accountAgeDays, followersCount, seedSalt, pfpUrl, phase } =
-      options;
+    const {
+      customPrompt,
+      fid,
+      neynarScore,
+      accountAgeDays,
+      followersCount,
+      seedSalt,
+      pfpUrl,
+      phase,
+    } = options;
 
     if (!this.geminiAI) throw new Error("Gemini API not available");
 
@@ -133,7 +149,15 @@ export class ImageGenerationService {
       console.log("🪨 Generating Clinker evolution...");
 
       // Use provided phase (number) or determine from metrics
-      const clinkerPhase: number = phase ?? (typeof this.getClinkerPhase(neynarScore, accountAgeDays, followersCount) === 'string' ? 1 : 1);
+      const clinkerPhase: number =
+        phase ??
+        (typeof this.getClinkerPhase(
+          neynarScore,
+          accountAgeDays,
+          followersCount
+        ) === "string"
+          ? 1
+          : 1);
       const phaseType = this.getPhaseType(clinkerPhase);
       const { glow, eyes, stone } = this.phaseColors(phaseType);
       const seedHash = this.computeSeed(fid, seedSalt);
@@ -145,9 +169,14 @@ export class ImageGenerationService {
         baseImageBase64 = await this.imageToBase64(
           window.location.origin + baseImagePath
         );
-        console.log(`📷 Using phase ${clinkerPhase} base image: ${baseImagePath}`);
+        console.log(
+          `📷 Using phase ${clinkerPhase} base image: ${baseImagePath}`
+        );
       } catch (error) {
-        console.error(`Failed to load base image for phase ${clinkerPhase}:`, error);
+        console.error(
+          `Failed to load base image for phase ${clinkerPhase}:`,
+          error
+        );
         throw new Error(`Could not load base image: ${baseImagePath}`);
       }
 
@@ -189,12 +218,26 @@ UNIQUENESS SEED: ${seedHash}
         try {
           const pfpResponse = await fetch(pfpUrl);
           if (pfpResponse.ok) {
-            const imageArrayBuffer = await pfpResponse.arrayBuffer();
-            const imageData = new Uint8Array(imageArrayBuffer);
-            const base64Image = btoa(String.fromCharCode(...imageData));
+            const blob = await pfpResponse.blob();
+            const mimeType =
+              blob.type ||
+              pfpResponse.headers.get("content-type") ||
+              "image/jpeg";
+
+            const base64Image = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const result = reader.result as string;
+                const base64 = result.split(",")[1];
+                resolve(base64);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+
             parts.push({
               inlineData: {
-                mimeType: pfpResponse.headers.get("content-type") || "image/jpeg",
+                mimeType: mimeType,
                 data: base64Image,
               },
             });
@@ -210,7 +253,8 @@ UNIQUENESS SEED: ${seedHash}
       });
 
       for await (const chunk of response) {
-        const inlineData = chunk.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+        const inlineData =
+          chunk.candidates?.[0]?.content?.parts?.[0]?.inlineData;
         if (inlineData?.data && inlineData?.mimeType) {
           const dataUrl = `data:${inlineData.mimeType};base64,${inlineData.data}`;
           console.log("✅ Clinker generation successful!");

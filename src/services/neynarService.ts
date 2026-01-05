@@ -62,7 +62,10 @@ function hslToHex(h: number, s: number, l: number) {
   else if (h < 300) [r, g, b] = [x, 0, c];
   else [r, g, b] = [c, 0, x];
 
-  const toHex = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, "0");
+  const toHex = (v: number) =>
+    Math.round((v + m) * 255)
+      .toString(16)
+      .padStart(2, "0");
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
 }
 
@@ -72,35 +75,45 @@ function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   b /= 255;
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
-  let h = 0, s = 0, l = (max + min) / 2;
+  let h = 0,
+    s = 0,
+    l = (max + min) / 2;
 
   if (max !== min) {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
     switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-      case g: h = ((b - r) / d + 2) / 6; break;
-      case b: h = ((r - g) / d + 4) / 6; break;
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        break;
+      case g:
+        h = ((b - r) / d + 2) / 6;
+        break;
+      case b:
+        h = ((r - g) / d + 4) / 6;
+        break;
     }
   }
   return [h * 360, s * 100, l * 100];
 }
 
 // Extract dominant colors from profile picture
-async function extractPfpColors(pfpUrl: string): Promise<{ primary: string; secondary: string; accent: string } | null> {
+async function extractPfpColors(
+  pfpUrl: string
+): Promise<{ primary: string; secondary: string; accent: string } | null> {
   try {
     // Create a canvas to analyze the image
     const img = new Image();
     img.crossOrigin = "Anonymous";
-    
+
     await new Promise((resolve, reject) => {
       img.onload = resolve;
       img.onerror = reject;
       img.src = pfpUrl;
     });
 
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
     // Scale down for performance
@@ -124,21 +137,25 @@ async function extractPfpColors(pfpUrl: string): Promise<{ primary: string; seco
       if (a < 128) continue;
       const brightness = (r + g + b) / 3;
       if (brightness < 30 || brightness > 240) continue;
-      const maxDiff = Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b));
+      const maxDiff = Math.max(
+        Math.abs(r - g),
+        Math.abs(g - b),
+        Math.abs(r - b)
+      );
       if (maxDiff < 15) continue; // Skip grays
 
       colors.push([r, g, b]);
     }
 
     if (colors.length === 0) {
-      console.warn('No vibrant colors found in PFP, using fallback');
+      console.warn("No vibrant colors found in PFP, using fallback");
       return null;
     }
 
     // K-means clustering to find 3 dominant colors
     const clusters = 3;
     let centroids: Array<[number, number, number]> = [];
-    
+
     // Initialize centroids randomly
     for (let i = 0; i < clusters; i++) {
       centroids.push(colors[Math.floor(Math.random() * colors.length)]);
@@ -147,7 +164,7 @@ async function extractPfpColors(pfpUrl: string): Promise<{ primary: string; seco
     // Run k-means iterations
     for (let iter = 0; iter < 10; iter++) {
       const groups: Array<Array<[number, number, number]>> = [[], [], []];
-      
+
       // Assign each color to nearest centroid
       for (const color of colors) {
         let minDist = Infinity;
@@ -155,8 +172,8 @@ async function extractPfpColors(pfpUrl: string): Promise<{ primary: string; seco
         for (let c = 0; c < clusters; c++) {
           const dist = Math.sqrt(
             Math.pow(color[0] - centroids[c][0], 2) +
-            Math.pow(color[1] - centroids[c][1], 2) +
-            Math.pow(color[2] - centroids[c][2], 2)
+              Math.pow(color[1] - centroids[c][1], 2) +
+              Math.pow(color[2] - centroids[c][2], 2)
           );
           if (dist < minDist) {
             minDist = dist;
@@ -169,9 +186,12 @@ async function extractPfpColors(pfpUrl: string): Promise<{ primary: string; seco
       // Recalculate centroids
       for (let c = 0; c < clusters; c++) {
         if (groups[c].length > 0) {
-          const avgR = groups[c].reduce((sum, col) => sum + col[0], 0) / groups[c].length;
-          const avgG = groups[c].reduce((sum, col) => sum + col[1], 0) / groups[c].length;
-          const avgB = groups[c].reduce((sum, col) => sum + col[2], 0) / groups[c].length;
+          const avgR =
+            groups[c].reduce((sum, col) => sum + col[0], 0) / groups[c].length;
+          const avgG =
+            groups[c].reduce((sum, col) => sum + col[1], 0) / groups[c].length;
+          const avgB =
+            groups[c].reduce((sum, col) => sum + col[2], 0) / groups[c].length;
           centroids[c] = [avgR, avgG, avgB];
         }
       }
@@ -180,14 +200,18 @@ async function extractPfpColors(pfpUrl: string): Promise<{ primary: string; seco
     // Convert to hex and sort by vibrancy/saturation
     const colorResults = centroids.map(([r, g, b]) => {
       const [h, s, l] = rgbToHsl(r, g, b);
-      const hex = `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g).toString(16).padStart(2, '0')}${Math.round(b).toString(16).padStart(2, '0')}`.toUpperCase();
+      const hex =
+        `#${Math.round(r).toString(16).padStart(2, "0")}${Math.round(g).toString(16).padStart(2, "0")}${Math.round(b).toString(16).padStart(2, "0")}`.toUpperCase();
       return { hex, h, s, l };
     });
 
     // Sort by saturation (most vibrant first)
     colorResults.sort((a, b) => b.s - a.s);
 
-    console.log('🎨 Extracted PFP colors:', colorResults.map(c => c.hex));
+    console.log(
+      "🎨 Extracted PFP colors:",
+      colorResults.map((c) => c.hex)
+    );
 
     return {
       primary: colorResults[0].hex,
@@ -195,7 +219,7 @@ async function extractPfpColors(pfpUrl: string): Promise<{ primary: string; seco
       accent: colorResults[2].hex,
     };
   } catch (error) {
-    console.error('Failed to extract PFP colors:', error);
+    console.error("Failed to extract PFP colors:", error);
     return null;
   }
 }
@@ -211,23 +235,22 @@ export function determineClinkerPhase(user: NeynarUser): {
   const score = user.score ?? user.experimental?.neynar_user_score ?? 0;
   const followers = user.follower_count;
 
-  
   // Tiering logic based on Neynar score + age + followers (requires ALL conditions)
-  if (score >= 0.9 && followers > 5000 ) {
+  if (score >= 0.9 && followers > 5000) {
     return {
       phase: 4,
       phaseName: "OG",
       description: "Long-time, high-score user with elite standing",
     };
   }
-  if (score >= 0.7 && followers > 1000 ) {
+  if (score >= 0.7 && followers > 1000) {
     return {
       phase: 3,
       phaseName: "Rising Star",
       description: "Established, influential Clinker with growing recognition",
     };
   }
-  if (score >= 0.4 && followers > 100 ) {
+  if (score >= 0.4 && followers > 100) {
     return {
       phase: 2,
       phaseName: "Youngin",
@@ -246,7 +269,7 @@ export function determineClinkerPhase(user: NeynarUser): {
 // -----------------------------
 export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
   const { phase, phaseName, description } = determineClinkerPhase(user);
-  
+
   console.log(`🎯 Clinker Phase Determined:`, {
     fid: user.fid,
     username: user.username,
@@ -259,10 +282,12 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
   });
 
   // Generate deterministic but unique traits based on user FID + follower count for extra entropy
-  const seed = hashString(`${user.fid}-${phaseName}-${user.username}-${user.follower_count}`);
+  const seed = hashString(
+    `${user.fid}-${phaseName}-${user.username}-${user.follower_count}`
+  );
   const seed2 = hashString(`${user.username}-${user.fid}`);
   const seed3 = hashString(`${user.display_name}-${user.follower_count}`);
-  
+
   // COLOR PALETTE - Extract from user's PFP
   let eyeColor: string;
   let stoneColor: string;
@@ -270,14 +295,18 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
 
   if (user.pfp_url) {
     const pfpColors = await extractPfpColors(user.pfp_url);
-    
+
     if (pfpColors) {
       // Use extracted colors from PFP
       eyeColor = pfpColors.primary;
       stoneColor = pfpColors.secondary;
       accentColor = pfpColors.accent;
-      
-      console.log('🎨 Using PFP colors:', { eyeColor, stoneColor, accentColor });
+
+      console.log("🎨 Using PFP colors:", {
+        eyeColor,
+        stoneColor,
+        accentColor,
+      });
     } else {
       // Fallback to deterministic generation if extraction fails
       const baseHue = seed % 360;
@@ -286,7 +315,7 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
       const eyeSat = 65 + (seed % 25);
       const eyeLight = 55 + (seed2 % 20);
       eyeColor = hslToHex(eyeHue, eyeSat, eyeLight);
-      
+
       const stoneHue = (baseHue + phase * 45 + (seed3 % 40)) % 360;
       const stoneSat = 50 + ((seed >> 2) % 30);
       const stoneLight = 45 + ((seed2 >> 2) % 25);
@@ -296,8 +325,8 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
       const accentSat = 60 + (seed3 % 30);
       const accentLight = 50 + ((seed >> 3) % 25);
       accentColor = hslToHex(accentHue, accentSat, accentLight);
-      
-      console.log('⚠️ PFP color extraction failed, using fallback colors');
+
+      console.log("⚠️ PFP color extraction failed, using fallback colors");
     }
   } else {
     // No PFP, use deterministic generation
@@ -307,7 +336,7 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
     const eyeSat = 65 + (seed % 25);
     const eyeLight = 55 + (seed2 % 20);
     eyeColor = hslToHex(eyeHue, eyeSat, eyeLight);
-    
+
     const stoneHue = (baseHue + phase * 45 + (seed3 % 40)) % 360;
     const stoneSat = 50 + ((seed >> 2) % 30);
     const stoneLight = 45 + ((seed2 >> 2) % 25);
@@ -317,10 +346,10 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
     const accentSat = 60 + (seed3 % 30);
     const accentLight = 50 + ((seed >> 3) % 25);
     accentColor = hslToHex(accentHue, accentSat, accentLight);
-    
-    console.log('ℹ️ No PFP URL, using deterministic colors');
+
+    console.log("ℹ️ No PFP URL, using deterministic colors");
   }
-  
+
   // SURFACE PATTERNS - More variety
   const patterns = [
     "crystalline facets with geometric edges",
@@ -334,11 +363,11 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
     "bumpy pebbled texture",
     "frosted translucent appearance",
     "layered sedimentary bands",
-    "speckled with tiny dots"
+    "speckled with tiny dots",
   ];
   const patternIndex = seed % patterns.length;
   const surfacePattern = patterns[patternIndex];
-  
+
   // UNIQUE FEATURES - Expand variety
   const features = [
     "tiny glowing gem embedded in forehead",
@@ -355,11 +384,11 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
     "subtle geometric tattoos",
     "small barnacle-like growths",
     "moss or lichen patches",
-    "carved symbolic patterns"
+    "carved symbolic patterns",
   ];
   const featureIndex = (seed >> 4) % features.length;
   const uniqueFeature = features[featureIndex];
-  
+
   // PERSONALITY EXPRESSIONS - More variety
   const expressions = [
     "curious wide-eyed wonder",
@@ -373,11 +402,11 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
     "excited energetic sparkle",
     "grumpy furrowed brow",
     "shy bashful look away",
-    "proud chin-up posture"
+    "proud chin-up posture",
   ];
   const expressionIndex = (seed >> 8) % expressions.length;
   const personality = expressions[expressionIndex];
-  
+
   // BODY PROPORTIONS - Subtle variations within phase
   const proportions = [
     "slightly rounder and squatter",
@@ -385,11 +414,11 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
     "perfectly balanced proportions",
     "wide base tapering up",
     "narrow base widening up",
-    "asymmetric charming tilt"
+    "asymmetric charming tilt",
   ];
   const proportionIndex = (seed3 >> 2) % proportions.length;
   const bodyShape = proportions[proportionIndex];
-  
+
   // EYE DETAILS - Make eyes distinctive
   const eyeShapes = [
     "large round pupils",
@@ -399,11 +428,11 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
     "eyes close together",
     "eyes wide apart",
     "droopy relaxed eyelids",
-    "alert upturned eyes"
+    "alert upturned eyes",
   ];
   const eyeShapeIndex = ((seed + seed2) >> 3) % eyeShapes.length;
   const eyeShape = eyeShapes[eyeShapeIndex];
-  
+
   // SPECIAL EFFECTS - Aura/glow variations
   const auraEffects = [
     "soft diffused glow",
@@ -413,7 +442,7 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
     "steady constant radiance",
     "swirling spiral energy",
     "geometric light patterns",
-    "wispy trailing glow"
+    "wispy trailing glow",
   ];
   const auraIndex = (seed2 >> 4) % auraEffects.length;
   const auraStyle = auraEffects[auraIndex];
@@ -424,23 +453,31 @@ export async function generateClinkerPrompt(user: NeynarUser): Promise<string> {
   let phaseDescription = "";
   let diamondColor = "";
   let diamondIntensity = "";
-  
+
   if (phase === 1) {
-    phaseDescription = "Small, compact form with soft edges and gentle proportions.";
+    phaseDescription =
+      "Small, compact form with soft edges and gentle proportions.";
     diamondColor = "soft amber-gold";
-    diamondIntensity = "Small glowing diamond with gentle warm glow, subtle sparkle, soft light emission - representing budding magical power";
+    diamondIntensity =
+      "Small glowing diamond with gentle warm glow, subtle sparkle, soft light emission - representing budding magical power";
   } else if (phase === 2) {
-    phaseDescription = "Growing form with developing features and youthful energy.";
+    phaseDescription =
+      "Growing form with developing features and youthful energy.";
     diamondColor = "vibrant emerald-green";
-    diamondIntensity = "Medium-sized bright diamond with moderate radiance, visible energy waves, growing light beams - representing developing elemental force";
+    diamondIntensity =
+      "Medium-sized bright diamond with moderate radiance, visible energy waves, growing light beams - representing developing elemental force";
   } else if (phase === 3) {
-    phaseDescription = "Mature presence with refined details and confident stance.";
+    phaseDescription =
+      "Mature presence with refined details and confident stance.";
     diamondColor = "brilliant sapphire-blue";
-    diamondIntensity = "Large brilliant diamond with strong prismatic glow, intense light rays, powerful energy aura - representing mastered magical power";
+    diamondIntensity =
+      "Large brilliant diamond with strong prismatic glow, intense light rays, powerful energy aura - representing mastered magical power";
   } else {
-    phaseDescription = "Commanding ancient form with majestic proportions and legendary aura.";
+    phaseDescription =
+      "Commanding ancient form with majestic proportions and legendary aura.";
     diamondColor = "blazing ruby-red with magma essence";
-    diamondIntensity = "MASSIVE legendary diamond with EXPLOSIVE radiance, BLINDING light bursts, lava energy crackling, ethereal power radiating outward - representing ultimate elemental force";
+    diamondIntensity =
+      "MASSIVE legendary diamond with EXPLOSIVE radiance, BLINDING light bursts, lava energy crackling, ethereal power radiating outward - representing ultimate elemental force";
   }
 
   return `${basePrompt}
@@ -509,12 +546,15 @@ NO TEXT OR LABELS should appear on the final image.
 // -----------------------------
 export async function fetchUserByFid(fid: number): Promise<NeynarUser | null> {
   try {
-    const res = await fetch(`${NEYNAR_BASE_URL}/farcaster/user/bulk?fids=${fid}`, {
-      headers: {
-        accept: "application/json",
-        api_key: NEYNAR_API_KEY || "",
-      },
-    });
+    const res = await fetch(
+      `${NEYNAR_BASE_URL}/farcaster/user/bulk?fids=${fid}`,
+      {
+        headers: {
+          accept: "application/json",
+          api_key: NEYNAR_API_KEY || "",
+        },
+      }
+    );
     if (!res.ok) return null;
     const data: NeynarUsersResponse = await res.json();
     return data.users?.[0] || null;
