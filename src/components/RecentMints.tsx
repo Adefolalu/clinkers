@@ -12,7 +12,7 @@ interface MintEvent {
 
 export function RecentMints() {
   const [mints, setMints] = useState<MintEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const publicClient = usePublicClient();
 
   // Fetch initial logs (last 5)
