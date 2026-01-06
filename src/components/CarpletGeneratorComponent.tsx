@@ -18,7 +18,7 @@ import { useFarcasterContext } from "../hooks/useFarcasterContext";
 export function ClinkerGeneratorComponent() {
   const { address, isConnected } = useAccount();
   const farcasterContext = useFarcasterContext();
-  const MINI_APP_URL = "https://clinkers.vercel.app";
+  const MINI_APP_URL = "https://farcaster.xyz/miniapps/Uiuova-UYUbl/clinkers";
 
   // Development mode - auto-set test FID for local testing
   const isDevelopment = import.meta.env.MODE === "development";
@@ -53,9 +53,7 @@ export function ClinkerGeneratorComponent() {
   } | null>(null);
   const [walletOwnsFid, setWalletOwnsFid] = useState<boolean | null>(null);
   const [mintedImageUrl, setMintedImageUrl] = useState<string | null>(null);
-  const [mintedMetadataUri, setMintedMetadataUri] = useState<string | null>(
-    null
-  );
+  const [, setMintedMetadataUri] = useState<string | null>(null);
 
   // Helper to map ipfs:// to HTTP gateway
   const ipfsToHttp = (uri: string) => {
@@ -482,16 +480,6 @@ export function ClinkerGeneratorComponent() {
 
             {/* Action buttons - Modern grid */}
             <div className="grid grid-cols-2 gap-3">
-              {mintedMetadataUri && (
-                <a
-                  href={mintedMetadataUri}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-purple-500/50 hover:scale-105"
-                >
-                  View NFT
-                </a>
-              )}
               {mintedImageUrl && (
                 <a
                   href={mintedImageUrl}
@@ -499,7 +487,7 @@ export function ClinkerGeneratorComponent() {
                   rel="noreferrer"
                   className="py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-purple-400/30 text-purple-200 font-semibold text-sm transition-all duration-200 hover:scale-105"
                 >
-                  Full Image
+                  View NFT
                 </a>
               )}
             </div>
